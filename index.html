@@ -1,1 +1,429 @@
-PLACEHOLDER_FOR_FULL_CONTENT
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RIPZ Raiders - Chapter 1: Protect the Nest</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0a0a0c; color: #f5f0e6; font-family: 'Courier New', monospace; overflow: hidden; touch-action: none; }
+  #wrap { display: flex; flex-direction: column; height: 100dvh; max-width: 520px; margin: 0 auto; background: #111; position: relative; }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; background: #1a2a1a; }
+  #hud { background: #111; color: #c9a227; padding: 6px 10px; font-size: 13px; min-height: 42px; border-top: 2px solid #c9a227; }
+  #dialog, #battle, #menu { display: none; position: absolute; left: 0; right: 0; background: #0d0e12; border: 3px solid #c9a227; color: #eee; padding: 14px 16px; margin: 8px; border-radius: 4px; font-size: 15px; line-height: 1.45; z-index: 10; }
+  #dialog { bottom: 52px; }
+  #battle { bottom: 0; top: 0; margin: 0; border: none; flex-direction: column; justify-content: space-between; }
+  #menu { top: 20%; bottom: auto; }
+  .hpbar { height: 12px; background: #333; border: 1px solid #888; margin: 4px 0; }
+  .hpfill { height: 100%; background: #4caf50; width: 100%; transition: width 0.25s; }
+  .menu button, #dialog button { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #1a1a1a; color: #c9a227; border: 2px solid #c9a227; font-family: inherit; font-size: 16px; }
+  .menu button:active, #dialog button:active { background: #c9a227; color: #111; }
+  #touch { position: absolute; bottom: 70px; left: 8px; display: none; z-index: 5; }
+  #touch button { width: 48px; height: 48px; margin: 2px; background: rgba(201,162,39,0.35); border: 2px solid #c9a227; color: #fff; font-size: 18px; }
+  #obj { position: absolute; top: 6px; left: 6px; right: 6px; background: rgba(0,0,0,0.7); color: #c9a227; padding: 6px 8px; font-size: 12px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="obj">Objective: Talk to the shopkeeper at the Hoot Haus.</div>
+  <canvas id="c" width="320" height="288"></canvas>
+  <div id="hud">Arrows / WASD to move. Interact with people.</div>
+  <div id="dialog">
+    <div id="d-text"></div>
+    <button onclick="advanceDialog()">Next</button>
+  </div>
+  <div id="battle">
+    <div style="padding:16px;">
+      <div id="b-name">Hootling</div>
+      <div class="hpbar"><div class="hpfill" id="p-hp"></div></div>
+      <div id="p-hp-text">30/30</div>
+      <div style="margin-top:16px;" id="e-name">Scalper</div>
+      <div class="hpbar"><div class="hpfill" id="e-hp"></div></div>
+      <div id="e-hp-text">35/35</div>
+      <p id="b-log" style="margin:16px 0; min-height:48px;"></p>
+    </div>
+    <div class="menu">
+      <button onclick="doAttack('peck')">Peck</button>
+      <button onclick="doAttack('hoot')">Hoot Blast</button>
+      <button onclick="doHeal()">Use Nest Berry (heal)</button>
+      <button onclick="doRun()">Run</button>
+    </div>
+  </div>
+  <div id="menu">
+    <div>Inventory / Status</div>
+    <div id="inv-text"></div>
+    <button onclick="closeMenu()">Close</button>
+  </div>
+</div>
+<div id="touch">
+  <div><button ontouchstart="key('ArrowUp',1)" ontouchend="key('ArrowUp',0)">↑</button></div>
+  <div>
+    <button ontouchstart="key('ArrowLeft',1)" ontouchend="key('ArrowLeft',0)">←</button>
+    <button ontouchstart="key('ArrowDown',1)" ontouchend="key('ArrowDown',0)">↓</button>
+    <button ontouchstart="key('ArrowRight',1)" ontouchend="key('ArrowRight',0)">→</button>
+  </div>
+  <div style="margin-top:4px;"><button onclick="interact()" style="width:100px;">Talk / Interact</button></div>
+</div>
+
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const TILE = 16;
+const VIEW_W = 20, VIEW_H = 18;
+
+// Zones
+const zones = {
+  plaza: {
+    name: "Hoot Plaza",
+    w: 24, h: 20,
+    map: [
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,2],
+      [2,0,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0,2],
+      [2,0,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0,2],
+      [2,0,1,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0,2],
+      [2,0,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,0,0,2],
+      [2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,2],
+      [2,0,0,0,0,1,0,0,0,5,5,5,5,5,0,0,1,0,0,0,0,0,2],
+      [2,0,0,0,0,1,0,5,5,5,5,5,5,5,0,1,0,0,0,0,0,0,2],
+      [2,0,0,0,0,1,0,5,5,5,5,5,5,5,0,1,0,0,0,0,0,0,2],
+      [2,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+    ],
+    solid: {2:1, 3:1},
+    npcs: [
+      { id: 'shop', x: 10*16, y: 6*16, color: '#c9a227', name: 'Shopkeeper', lines: [
+        "Welcome to Owlies Hoot Haus! We're low on stock today...",
+        "Some guy in a hoodie was asking about bulk packs earlier. Seemed off.",
+        "If you see anything suspicious, let me know. Kids need these packs."
+      ]},
+      { id: 'kid', x: 14*16, y: 11*16, color: '#88ccff', name: 'Kid', lines: [
+        "I hope they still have the new packs...",
+        "That tall guy was buying way too many."
+      ]}
+    ],
+    exits: [{ x: 22*16, y: 8*16, to: 'route', px: 2*16, py: 8*16 }]
+  },
+  route: {
+    name: "Grass Route",
+    w: 22, h: 16,
+    map: Array.from({length:16}, (_,y) => Array.from({length:22}, (_,x) => {
+      if (x===0 || x===21 || y===0 || y===15) return 2;
+      if (y >= 5 && y <= 10 && x >= 6 && x <= 15) return 5;
+      return 0;
+    })),
+    solid: {2:1},
+    npcs: [
+      { id: 'scalper1', x: 10*16, y: 7*16, color: '#333', name: 'Suspicious Guy', lines: [
+        "Just grabbing a few for the kids... nothing to see here."
+      ], battle: true, hp: 32, reveal: "You're not who you said you were! You're trying to buy out Walmart!" }
+    ],
+    exits: [
+      { x: 1*16, y: 8*16, to: 'plaza', px: 20*16, py: 8*16 },
+      { x: 20*16, y: 8*16, to: 'alley', px: 2*16, py: 6*16 }
+    ]
+  },
+  alley: {
+    name: "Back Alley",
+    w: 18, h: 14,
+    map: Array.from({length:14}, (_,y) => Array.from({length:18}, (_,x) => {
+      if (x===0 || x===17 || y===0 || y===13) return 2;
+      if (y >= 4 && y <= 9 && x >= 4 && x <= 13) return 1;
+      return 0;
+    })),
+    solid: {2:1},
+    npcs: [
+      { id: 'scalper2', x: 8*16, y: 6*16, color: '#222', name: 'Hooded Scalper', lines: [
+        "These packs are mine. Kids can wait."
+      ], battle: true, hp: 42, reveal: "You're not who you said you were! You're trying to buy out Walmart!" },
+      { id: 'clue', x: 12*16, y: 8*16, color: '#aaa', name: 'Note', lines: [
+        "A crumpled note: 'Meet at the warehouse after dark. Bring cash. Clear the shelves.'"
+      ]}
+    ],
+    exits: [
+      { x: 1*16, y: 6*16, to: 'route', px: 18*16, py: 8*16 },
+      { x: 16*16, y: 6*16, to: 'warehouse', px: 2*16, py: 7*16 }
+    ]
+  },
+  warehouse: {
+    name: "Warehouse",
+    w: 20, h: 16,
+    map: Array.from({length:16}, (_,y) => Array.from({length:20}, (_,x) => {
+      if (x===0 || x===19 || y===0 || y===15) return 2;
+      if (y >= 3 && y <= 12 && x >= 3 && x <= 16) return 1;
+      return 0;
+    })),
+    solid: {2:1},
+    npcs: [
+      { id: 'boss', x: 10*16, y: 7*16, color: '#111', name: 'Lead Scalper', lines: [
+        "You made it this far. Too bad. These packs are for resale."
+      ], battle: true, hp: 55, reveal: "You're not who you said you were! You're trying to buy out Walmart!", boss: true }
+    ],
+    exits: [
+      { x: 1*16, y: 7*16, to: 'alley', px: 14*16, py: 6*16 }
+    ]
+  }
+};
+
+let currentZone = 'plaza';
+let px = 8*TILE, py = 12*TILE;
+let camX = 0, camY = 0;
+let keys = {};
+let dialogQueue = [];
+let dialogIndex = 0;
+let inDialog = false;
+let inBattle = false;
+let inMenu = false;
+let playerHp = 36, playerMax = 36;
+let berries = 2;
+let flags = JSON.parse(localStorage.getItem('ripz_flags') || '{}');
+let defeated = JSON.parse(localStorage.getItem('ripz_defeated') || '{}');
+
+function setFlag(k, v=true) { flags[k]=v; localStorage.setItem('ripz_flags', JSON.stringify(flags)); updateObjective(); }
+function isDefeated(id) { return !!defeated[id]; }
+function markDefeated(id) { defeated[id]=true; localStorage.setItem('ripz_defeated', JSON.stringify(defeated)); }
+
+function updateObjective() {
+  let text = "Objective: Talk to the shopkeeper at the Hoot Haus.";
+  if (flags.talkedShop) text = "Objective: Investigate the Grass Route east of the plaza.";
+  if (flags.beat1) text = "Objective: Follow the route further east into the alley.";
+  if (flags.beat2) text = "Objective: Find the warehouse and stop the lead scalper.";
+  if (flags.beatBoss) text = "Chapter 1 complete! Stock is safe for the kids.";
+  document.getElementById('obj').textContent = text;
+}
+
+function getZone() { return zones[currentZone]; }
+
+function drawTile(x, y, t) {
+  const colors = {0:['#3a6a3a','#2e5a2e'],1:['#8a7a5a','#7a6a4a'],2:['#1a3a1a','#0f2a0f'],3:['#5a4a3a','#4a3a2a'],4:['#c9a227','#a8821f'],5:['#4a8a4a','#3a7a3a']};
+  const col = colors[t] || colors[0];
+  ctx.fillStyle = col[(x+y)%2];
+  ctx.fillRect(x*TILE - camX, y*TILE - camY, TILE, TILE);
+  if (t===2) {
+    ctx.fillStyle = '#2a4a2a';
+    ctx.fillRect(x*TILE+4-camX, y*TILE+2-camY, 8, 12);
+  }
+  if (t===5) {
+    ctx.fillStyle = '#2a5a2a';
+    ctx.fillRect(x*TILE+2-camX, y*TILE+10-camY, 2, 6);
+    ctx.fillRect(x*TILE+6-camX, y*TILE+8-camY, 2, 8);
+    ctx.fillRect(x*TILE+10-camX, y*TILE+10-camY, 2, 6);
+  }
+}
+
+function draw() {
+  const z = getZone();
+  ctx.clearRect(0,0,c.width,c.height);
+  const startX = Math.max(0, Math.floor(camX/TILE));
+  const startY = Math.max(0, Math.floor(camY/TILE));
+  const endX = Math.min(z.w, startX + VIEW_W + 1);
+  const endY = Math.min(z.h, startY + VIEW_H + 1);
+  for (let y=startY; y<endY; y++) {
+    for (let x=startX; x<endX; x++) {
+      drawTile(x, y, z.map[y][x]);
+    }
+  }
+  // NPCs
+  z.npcs.forEach(n => {
+    if (n.battle && isDefeated(n.id)) return;
+    ctx.fillStyle = n.color;
+    ctx.fillRect(n.x+3-camX, n.y+4-camY, 10, 10);
+    if (n.battle) {
+      ctx.fillStyle = '#c9a227';
+      ctx.fillRect(n.x+5-camX, n.y+12-camY, 6, 3);
+    }
+  });
+  // Player (Owlie-ish)
+  ctx.fillStyle = '#888';
+  ctx.fillRect(px+4-camX, py+6-camY, 8, 8);
+  ctx.fillStyle = '#ffb6c1';
+  ctx.fillRect(px+6-camX, py+4-camY, 4, 3);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(px+5-camX, py+5-camY, 1, 1);
+  ctx.fillRect(px+10-camX, py+5-camY, 1, 1);
+  // Rainbow hoodie accents
+  ctx.fillStyle = '#ff6b6b'; ctx.fillRect(px+3-camX, py+8-camY, 2, 3);
+  ctx.fillStyle = '#4ecdc4'; ctx.fillRect(px+11-camX, py+8-camY, 2, 3);
+}
+
+function canMove(nx, ny) {
+  const z = getZone();
+  const tx = Math.floor(nx / TILE), ty = Math.floor(ny / TILE);
+  if (tx < 0 || ty < 0 || tx >= z.w || ty >= z.h) return false;
+  return !z.solid[z.map[ty][tx]];
+}
+
+function updateCamera() {
+  const z = getZone();
+  camX = Math.max(0, Math.min(px - c.width/2 + 8, z.w*TILE - c.width));
+  camY = Math.max(0, Math.min(py - c.height/2 + 8, z.h*TILE - c.height));
+}
+
+function update() {
+  if (inDialog || inBattle || inMenu) return;
+  let nx = px, ny = py;
+  const spd = 1.4;
+  if (keys.ArrowLeft || keys.a) nx -= spd;
+  if (keys.ArrowRight || keys.d) nx += spd;
+  if (keys.ArrowUp || keys.w) ny -= spd;
+  if (keys.ArrowDown || keys.s) ny += spd;
+  if (canMove(nx, py)) px = nx;
+  if (canMove(px, ny)) py = ny;
+  updateCamera();
+
+  // Exits
+  const z = getZone();
+  z.exits.forEach(ex => {
+    if (Math.hypot(px - ex.x, py - ex.y) < 14) {
+      currentZone = ex.to;
+      px = ex.px; py = ex.py;
+      updateCamera();
+      document.getElementById('hud').textContent = zones[currentZone].name;
+    }
+  });
+}
+
+function interact() {
+  if (inDialog || inBattle || inMenu) return;
+  const z = getZone();
+  for (const n of z.npcs) {
+    if (n.battle && isDefeated(n.id)) continue;
+    const d = Math.hypot((px+8)-(n.x+8), (py+8)-(n.y+8));
+    if (d < 28) {
+      if (n.battle) {
+        startDialog(n.lines, () => startBattle(n));
+      } else {
+        startDialog(n.lines, () => {
+          if (n.id === 'shop') setFlag('talkedShop');
+          if (n.id === 'clue') setFlag('foundNote');
+        });
+      }
+      return;
+    }
+  }
+  document.getElementById('hud').textContent = "Nothing here.";
+}
+
+function startDialog(lines, after) {
+  dialogQueue = lines;
+  dialogIndex = 0;
+  inDialog = true;
+  document.getElementById('d-text').textContent = dialogQueue[0];
+  document.getElementById('dialog').style.display = 'block';
+  window._afterDialog = after;
+}
+
+function advanceDialog() {
+  dialogIndex++;
+  if (dialogIndex < dialogQueue.length) {
+    document.getElementById('d-text').textContent = dialogQueue[dialogIndex];
+  } else {
+    document.getElementById('dialog').style.display = 'none';
+    inDialog = false;
+    if (window._afterDialog) window._afterDialog();
+    window._afterDialog = null;
+  }
+}
+
+function startBattle(npc) {
+  inBattle = true;
+  window._enemy = { name: npc.name, hp: npc.hp || 35, max: npc.hp || 35, id: npc.id, boss: !!npc.boss };
+  document.getElementById('battle').style.display = 'flex';
+  document.getElementById('e-name').textContent = npc.name;
+  document.getElementById('b-log').textContent = npc.reveal || "A scalper challenges you!";
+  updateBars();
+}
+
+function updateBars() {
+  const e = window._enemy || {hp:0,max:1};
+  document.getElementById('p-hp').style.width = (playerHp/playerMax*100)+'%';
+  document.getElementById('e-hp').style.width = (e.hp/e.max*100)+'%';
+  document.getElementById('p-hp-text').textContent = Math.max(0,playerHp)+'/'+playerMax;
+  document.getElementById('e-hp-text').textContent = Math.max(0,e.hp)+'/'+e.max;
+}
+
+function doAttack(move) {
+  if (!inBattle) return;
+  const dmg = move==='peck' ? 7+Math.floor(Math.random()*4) : 12+Math.floor(Math.random()*6);
+  window._enemy.hp -= dmg;
+  document.getElementById('b-log').textContent = `You used ${move==='peck'?'Peck':'Hoot Blast'}! (${dmg})`;
+  updateBars();
+  if (window._enemy.hp <= 0) {
+    document.getElementById('b-log').textContent = window._enemy.boss ? "You defeated the lead scalper! Stock is safe for the kids." : "You win! Stock protected.";
+    markDefeated(window._enemy.id);
+    if (window._enemy.id==='scalper1') setFlag('beat1');
+    if (window._enemy.id==='scalper2') setFlag('beat2');
+    if (window._enemy.boss) setFlag('beatBoss');
+    setTimeout(endBattle, 1600);
+    return;
+  }
+  setTimeout(() => {
+    const edmg = 5 + Math.floor(Math.random()*6) + (window._enemy.boss?3:0);
+    playerHp -= edmg;
+    document.getElementById('b-log').textContent = `${window._enemy.name} attacks! (${edmg})`;
+    updateBars();
+    if (playerHp <= 0) {
+      document.getElementById('b-log').textContent = "You were knocked out. The scalpers clear more stock...";
+      playerHp = Math.floor(playerMax/2);
+      setTimeout(endBattle, 1600);
+    }
+  }, 600);
+}
+
+function doHeal() {
+  if (berries <= 0) { document.getElementById('b-log').textContent = "No Nest Berries left!"; return; }
+  berries--;
+  playerHp = Math.min(playerMax, playerHp + 18);
+  document.getElementById('b-log').textContent = "Used Nest Berry! HP restored.";
+  updateBars();
+}
+
+function doRun() {
+  document.getElementById('b-log').textContent = "Got away!";
+  setTimeout(endBattle, 800);
+}
+
+function endBattle() {
+  inBattle = false;
+  document.getElementById('battle').style.display = 'none';
+  document.getElementById('hud').textContent = getZone().name;
+}
+
+function openMenu() {
+  inMenu = true;
+  document.getElementById('inv-text').innerHTML = `HP: ${playerHp}/${playerMax}<br>Nest Berries: ${berries}<br>Flags: ${Object.keys(flags).join(', ')||'none'}`;
+  document.getElementById('menu').style.display = 'block';
+}
+function closeMenu() { inMenu=false; document.getElementById('menu').style.display='none'; }
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (e.key === ' ' || e.key === 'Enter') interact();
+  if (e.key === 'm' || e.key === 'M') openMenu();
+});
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+function key(k, on) { keys[k] = !!on; }
+if ('ontouchstart' in window) document.getElementById('touch').style.display = 'block';
+
+updateObjective();
+loop();
+</script>
+</body>
+</html>
