@@ -37,6 +37,19 @@ const c = document.getElementById('c');
 const ctx = c.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
+
+const tileImgs = {};
+function loadTile(name, b64) {
+  const img = new Image();
+  img.src = 'data:image/png;base64,' + b64;
+  tileImgs[name] = img;
+}
+loadTile('grass', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAfElEQVR4nJ2SIQ7FMAxDPcnoI+OiHGmn++crGjYqHojUTSNrRqKoceuXNNv+36OFbUkzelg/3U8k9aNHC6bawwBmLfNUzDuZ81XxeIt33xU3lng8zBIPAJZ4JLHEA4A570Wea0rrv3H1sNg9Szz96CzxRAuWeGyzxPNlW09geFIHlbD0WAAAAABJRU5ErkJggg==');
+loadTile('path', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJklEQVR4nGPcsaJCQEDgw4cPRJJMJKn+8OEDE0mqR20YtWEgbQAAYQd/N/0CzBcAAAAASUVORK5CYII=');
+loadTile('tree', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAfUlEQVR4nGNgoBAwYhM0aDD4j038QsMFDPVMxGrGJcdESAEhQ5hwSQgoCBBlCBMuzR8efCDKEIwwYGBgYPjw4AMKjQ9gNYAUMEgMwJZACAGYHiZ0AVI0MzBgScqw6EGPAViUoluEEQb4XIJNDqdihQQFlMT1YMEDrGopjgUApTcz2jzK6p0AAAAASUVORK5CYII=');
+loadTile('tall', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAALElEQVR4nGMMWBDAQApgIkn1sNbw4MGDBw8eUNUGPEaiyQ6ZUBpQDYykJm8A4GMSX0+W0MwAAAAASUVORK5CYII=');
+loadTile('player', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAa0lEQVR4nGNgGAWMuCT+bzv4H0Whlz1WtUy49BMpxsCCLtDR0YFVYUdHBwMDA8P/iooKFJdgGAADnZeO45JCAShe+J+d/b/88WOcio+52jD4nT2C4kJcYUA0GHgDMOIWVyzAAHosUOyCgQcA53YcBD3y868AAAAASUVORK5CYII=');
+
 const TILE = 16;
 const VIEW_W = 20, VIEW_H = 18;
 
@@ -238,48 +251,22 @@ function drawHPBar(x, y, w, hp, max) {
 // Improved tile drawing matching reference style
 function drawTile(x, y, t) {
   const sx = x*TILE - camX, sy = y*TILE - camY;
-  if (t === 0) { // Grass - checkerboard like references
-    ctx.fillStyle = (x+y)%2 === 0 ? GB.grass1 : GB.grass2;
-    ctx.fillRect(sx, sy, TILE, TILE);
-    if ((x*3+y*7)%5 === 0) {
-      ctx.fillStyle = GB.grass3;
-      ctx.fillRect(sx+6, sy+10, 2, 4);
-    }
-  } else if (t === 1) { // Path
-    ctx.fillStyle = (x+y)%2 === 0 ? GB.path1 : GB.path2;
-    ctx.fillRect(sx, sy, TILE, TILE);
-  } else if (t === 2) { // Tree - rounded canopy like references
-    ctx.fillStyle = GB.grass1;
-    ctx.fillRect(sx, sy, TILE, TILE);
-    ctx.fillStyle = GB.tree;
-    ctx.beginPath();
-    ctx.arc(sx+8, sy+8, 7, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = GB.treeDark;
-    ctx.fillRect(sx+6, sy+12, 4, 4);
-    ctx.fillStyle = GB.treeLight;
-    ctx.fillRect(sx+5, sy+5, 3, 3);
-  } else if (t === 3) { // Building wall
-    ctx.fillStyle = GB.wall;
-    ctx.fillRect(sx, sy, TILE, TILE);
-    ctx.fillStyle = GB.wallDark;
-    ctx.fillRect(sx, sy, TILE, 2);
-    ctx.fillRect(sx, sy, 2, TILE);
-  } else if (t === 4) { // Door
-    ctx.fillStyle = GB.wall;
-    ctx.fillRect(sx, sy, TILE, TILE);
-    ctx.fillStyle = '#604020';
-    ctx.fillRect(sx+4, sy+4, 8, 12);
-    ctx.fillStyle = '#c9a227';
-    ctx.fillRect(sx+10, sy+8, 2, 2);
-  } else if (t === 5) { // Tall grass
-    ctx.fillStyle = (x+y)%2 === 0 ? GB.tall : GB.tallDark;
-    ctx.fillRect(sx, sy, TILE, TILE);
-    ctx.fillStyle = GB.treeLight;
-    ctx.fillRect(sx+2, sy+8, 2, 6);
-    ctx.fillRect(sx+7, sy+6, 2, 8);
-    ctx.fillRect(sx+12, sy+8, 2, 6);
+  let img = null;
+  if (t === 0 && tileImgs.grass && tileImgs.grass.complete) img = tileImgs.grass;
+  else if (t === 1 && tileImgs.path && tileImgs.path.complete) img = tileImgs.path;
+  else if (t === 2 && tileImgs.tree && tileImgs.tree.complete) img = tileImgs.tree;
+  else if (t === 5 && tileImgs.tall && tileImgs.tall.complete) img = tileImgs.tall;
+  if (img) {
+    ctx.drawImage(img, sx, sy, TILE, TILE);
+    return;
   }
+  // fallback
+  if (t === 0) { ctx.fillStyle = (x+y)%2===0 ? '#70b070' : '#60a060'; ctx.fillRect(sx,sy,TILE,TILE); }
+  else if (t === 1) { ctx.fillStyle = '#c8b888'; ctx.fillRect(sx,sy,TILE,TILE); }
+  else if (t === 2) { ctx.fillStyle = '#308030'; ctx.beginPath(); ctx.arc(sx+8,sy+8,7,0,Math.PI*2); ctx.fill(); }
+  else if (t === 3) { ctx.fillStyle = '#a09070'; ctx.fillRect(sx,sy,TILE,TILE); }
+  else if (t === 4) { ctx.fillStyle = '#604020'; ctx.fillRect(sx+4,sy+4,8,12); }
+  else if (t === 5) { ctx.fillStyle = '#50a050'; ctx.fillRect(sx,sy,TILE,TILE); }
 }
 
 function drawWorld() {
@@ -300,16 +287,15 @@ function drawWorld() {
       ctx.fillRect(nx+5, ny+12, 6, 3);
     }
   });
-  // Player Owlie
-  ctx.fillStyle = '#888';
-  ctx.fillRect(px+4-camX, py+6-camY, 8, 8);
-  ctx.fillStyle = '#ffb6c1';
-  ctx.fillRect(px+6-camX, py+4-camY, 4, 3);
-  ctx.fillStyle = '#000';
-  ctx.fillRect(px+5-camX, py+5-camY, 1, 1);
-  ctx.fillRect(px+10-camX, py+5-camY, 1, 1);
-  ctx.fillStyle = '#ff6b6b'; ctx.fillRect(px+3-camX, py+8-camY, 2, 3);
-  ctx.fillStyle = '#4ecdc4'; ctx.fillRect(px+11-camX, py+8-camY, 2, 3);
+  // Player
+  if (tileImgs.player && tileImgs.player.complete) {
+    ctx.drawImage(tileImgs.player, px-camX, py-camY, TILE, TILE);
+  } else {
+    ctx.fillStyle = '#888';
+    ctx.fillRect(px+4-camX, py+6-camY, 8, 8);
+    ctx.fillStyle = '#ffb6c1';
+    ctx.fillRect(px+6-camX, py+4-camY, 4, 3);
+  }
 }
 
 function wrap(str, max) {
