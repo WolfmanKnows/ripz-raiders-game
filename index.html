@@ -6,54 +6,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: #0a0a0c; color: #f5f0e6; font-family: 'Courier New', monospace; overflow: hidden; touch-action: none; }
-  #wrap { display: flex; flex-direction: column; height: 100dvh; max-width: 520px; margin: 0 auto; background: #111; position: relative; }
+  html, body { height: 100%; background: #0a0a0c; color: #111; font-family: 'Courier New', monospace; overflow: hidden; touch-action: none; }
+  #wrap { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; background: #111; position: relative; }
   canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; background: #1a2a1a; }
-  #hud { background: #111; color: #c9a227; padding: 6px 10px; font-size: 13px; min-height: 42px; border-top: 2px solid #c9a227; }
-  #dialog, #battle, #menu { display: none; position: absolute; left: 0; right: 0; background: #0d0e12; border: 3px solid #c9a227; color: #eee; padding: 14px 16px; margin: 8px; border-radius: 4px; font-size: 15px; line-height: 1.45; z-index: 10; }
-  #dialog { bottom: 52px; }
-  #battle { bottom: 0; top: 0; margin: 0; border: none; flex-direction: column; justify-content: space-between; }
-  #menu { top: 20%; bottom: auto; }
-  .hpbar { height: 12px; background: #333; border: 1px solid #888; margin: 4px 0; }
-  .hpfill { height: 100%; background: #4caf50; width: 100%; transition: width 0.25s; }
-  .menu button, #dialog button { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #1a1a1a; color: #c9a227; border: 2px solid #c9a227; font-family: inherit; font-size: 16px; }
-  .menu button:active, #dialog button:active { background: #c9a227; color: #111; }
-  #touch { position: absolute; bottom: 70px; left: 8px; display: none; z-index: 5; }
-  #touch button { width: 48px; height: 48px; margin: 2px; background: rgba(201,162,39,0.35); border: 2px solid #c9a227; color: #fff; font-size: 18px; }
-  #obj { position: absolute; top: 6px; left: 6px; right: 6px; background: rgba(0,0,0,0.7); color: #c9a227; padding: 6px 8px; font-size: 12px; border-radius: 4px; }
+  #hud { background: #111; color: #c9a227; padding: 4px 8px; font-size: 12px; min-height: 28px; border-top: 2px solid #c9a227; }
+  #touch { position: absolute; bottom: 50px; left: 6px; display: none; z-index: 5; }
+  #touch button { width: 44px; height: 44px; margin: 1px; background: rgba(201,162,39,0.4); border: 2px solid #c9a227; color: #fff; font-size: 16px; }
+  #obj { position: absolute; top: 4px; left: 4px; right: 4px; background: rgba(0,0,0,0.75); color: #c9a227; padding: 4px 6px; font-size: 11px; border-radius: 3px; }
 </style>
 </head>
 <body>
 <div id="wrap">
   <div id="obj">Objective: Talk to the shopkeeper at the Hoot Haus.</div>
   <canvas id="c" width="320" height="288"></canvas>
-  <div id="hud">Arrows / WASD to move. Interact with people.</div>
-  <div id="dialog">
-    <div id="d-text"></div>
-    <button onclick="advanceDialog()">Next</button>
-  </div>
-  <div id="battle">
-    <div style="padding:16px;">
-      <div id="b-name">Hootling</div>
-      <div class="hpbar"><div class="hpfill" id="p-hp"></div></div>
-      <div id="p-hp-text">30/30</div>
-      <div style="margin-top:16px;" id="e-name">Scalper</div>
-      <div class="hpbar"><div class="hpfill" id="e-hp"></div></div>
-      <div id="e-hp-text">35/35</div>
-      <p id="b-log" style="margin:16px 0; min-height:48px;"></p>
-    </div>
-    <div class="menu">
-      <button onclick="doAttack('peck')">Peck</button>
-      <button onclick="doAttack('hoot')">Hoot Blast</button>
-      <button onclick="doHeal()">Use Nest Berry (heal)</button>
-      <button onclick="doRun()">Run</button>
-    </div>
-  </div>
-  <div id="menu">
-    <div>Inventory / Status</div>
-    <div id="inv-text"></div>
-    <button onclick="closeMenu()">Close</button>
-  </div>
+  <div id="hud">Arrows/WASD move. Space or Talk to interact.</div>
 </div>
 <div id="touch">
   <div><button ontouchstart="key('ArrowUp',1)" ontouchend="key('ArrowUp',0)">↑</button></div>
@@ -62,7 +28,7 @@
     <button ontouchstart="key('ArrowDown',1)" ontouchend="key('ArrowDown',0)">↓</button>
     <button ontouchstart="key('ArrowRight',1)" ontouchend="key('ArrowRight',0)">→</button>
   </div>
-  <div style="margin-top:4px;"><button onclick="interact()" style="width:100px;">Talk / Interact</button></div>
+  <div><button onclick="interact()" style="width:90px;font-size:12px;">Talk</button></div>
 </div>
 
 <script>
@@ -73,7 +39,6 @@ ctx.imageSmoothingEnabled = false;
 const TILE = 16;
 const VIEW_W = 20, VIEW_H = 18;
 
-// Zones
 const zones = {
   plaza: {
     name: "Hoot Plaza",
@@ -103,9 +68,10 @@ const zones = {
     solid: {2:1, 3:1},
     npcs: [
       { id: 'shop', x: 10*16, y: 6*16, color: '#c9a227', name: 'Shopkeeper', lines: [
-        "Welcome to Owlies Hoot Haus! We're low on stock today...",
-        "Some guy in a hoodie was asking about bulk packs earlier. Seemed off.",
-        "If you see anything suspicious, let me know. Kids need these packs."
+        "Welcome to Owlies Hoot Haus!",
+        "We're low on stock today...",
+        "A guy in a hoodie was asking about bulk packs.",
+        "If you see anything suspicious, let me know."
       ]},
       { id: 'kid', x: 14*16, y: 11*16, color: '#88ccff', name: 'Kid', lines: [
         "I hope they still have the new packs...",
@@ -125,7 +91,7 @@ const zones = {
     solid: {2:1},
     npcs: [
       { id: 'scalper1', x: 10*16, y: 7*16, color: '#333', name: 'Suspicious Guy', lines: [
-        "Just grabbing a few for the kids... nothing to see here."
+        "Just grabbing a few for the kids..."
       ], battle: true, hp: 32, reveal: "You're not who you said you were! You're trying to buy out Walmart!" }
     ],
     exits: [
@@ -147,7 +113,8 @@ const zones = {
         "These packs are mine. Kids can wait."
       ], battle: true, hp: 42, reveal: "You're not who you said you were! You're trying to buy out Walmart!" },
       { id: 'clue', x: 12*16, y: 8*16, color: '#aaa', name: 'Note', lines: [
-        "A crumpled note: 'Meet at the warehouse after dark. Bring cash. Clear the shelves.'"
+        "A crumpled note: Meet at the warehouse after dark.",
+        "Bring cash. Clear the shelves."
       ]}
     ],
     exits: [
@@ -166,7 +133,8 @@ const zones = {
     solid: {2:1},
     npcs: [
       { id: 'boss', x: 10*16, y: 7*16, color: '#111', name: 'Lead Scalper', lines: [
-        "You made it this far. Too bad. These packs are for resale."
+        "You made it this far. Too bad.",
+        "These packs are for resale."
       ], battle: true, hp: 55, reveal: "You're not who you said you were! You're trying to buy out Walmart!", boss: true }
     ],
     exits: [
@@ -179,15 +147,12 @@ let currentZone = 'plaza';
 let px = 8*TILE, py = 12*TILE;
 let camX = 0, camY = 0;
 let keys = {};
-let dialogQueue = [];
-let dialogIndex = 0;
-let inDialog = false;
-let inBattle = false;
-let inMenu = false;
-let playerHp = 36, playerMax = 36;
-let berries = 2;
+let dialogQueue = [], dialogIndex = 0, inDialog = false;
+let inBattle = false, battleMenu = 0;
+let playerHp = 36, playerMax = 36, berries = 2;
 let flags = JSON.parse(localStorage.getItem('ripz_flags') || '{}');
 let defeated = JSON.parse(localStorage.getItem('ripz_defeated') || '{}');
+let enemy = null;
 
 function setFlag(k, v=true) { flags[k]=v; localStorage.setItem('ripz_flags', JSON.stringify(flags)); updateObjective(); }
 function isDefeated(id) { return !!defeated[id]; }
@@ -203,6 +168,36 @@ function updateObjective() {
 }
 
 function getZone() { return zones[currentZone]; }
+
+function drawBox(x, y, w, h, fill='#f0f0f0', border='#111') {
+  ctx.fillStyle = border;
+  ctx.fillRect(x-2, y-2, w+4, h+4);
+  ctx.fillStyle = fill;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = border;
+  ctx.fillRect(x, y, w, 2);
+  ctx.fillRect(x, y+h-2, w, 2);
+  ctx.fillRect(x, y, 2, h);
+  ctx.fillRect(x+w-2, y, 2, h);
+}
+
+function drawHPBar(x, y, w, hp, max, label) {
+  ctx.fillStyle = '#111';
+  ctx.font = '8px monospace';
+  ctx.fillText(label, x, y-2);
+  const barW = w;
+  ctx.fillStyle = '#555';
+  ctx.fillRect(x, y+2, barW, 6);
+  const fill = Math.max(0, Math.min(barW, (hp/max)*barW));
+  let col = '#4caf50';
+  if (hp/max < 0.5) col = '#ffeb3b';
+  if (hp/max < 0.25) col = '#f44336';
+  ctx.fillStyle = col;
+  ctx.fillRect(x+1, y+3, fill-2, 4);
+  ctx.fillStyle = '#111';
+  ctx.font = '7px monospace';
+  ctx.fillText(hp+'/'+max, x+barW+4, y+8);
+}
 
 function drawTile(x, y, t) {
   const colors = {0:['#3a6a3a','#2e5a2e'],1:['#8a7a5a','#7a6a4a'],2:['#1a3a1a','#0f2a0f'],3:['#5a4a3a','#4a3a2a'],4:['#c9a227','#a8821f'],5:['#4a8a4a','#3a7a3a']};
@@ -221,19 +216,15 @@ function drawTile(x, y, t) {
   }
 }
 
-function draw() {
+function drawWorld() {
   const z = getZone();
-  ctx.clearRect(0,0,c.width,c.height);
   const startX = Math.max(0, Math.floor(camX/TILE));
   const startY = Math.max(0, Math.floor(camY/TILE));
   const endX = Math.min(z.w, startX + VIEW_W + 1);
   const endY = Math.min(z.h, startY + VIEW_H + 1);
   for (let y=startY; y<endY; y++) {
-    for (let x=startX; x<endX; x++) {
-      drawTile(x, y, z.map[y][x]);
-    }
+    for (let x=startX; x<endX; x++) drawTile(x, y, z.map[y][x]);
   }
-  // NPCs
   z.npcs.forEach(n => {
     if (n.battle && isDefeated(n.id)) return;
     ctx.fillStyle = n.color;
@@ -243,7 +234,6 @@ function draw() {
       ctx.fillRect(n.x+5-camX, n.y+12-camY, 6, 3);
     }
   });
-  // Player (Owlie-ish)
   ctx.fillStyle = '#888';
   ctx.fillRect(px+4-camX, py+6-camY, 8, 8);
   ctx.fillStyle = '#ffb6c1';
@@ -251,9 +241,72 @@ function draw() {
   ctx.fillStyle = '#000';
   ctx.fillRect(px+5-camX, py+5-camY, 1, 1);
   ctx.fillRect(px+10-camX, py+5-camY, 1, 1);
-  // Rainbow hoodie accents
   ctx.fillStyle = '#ff6b6b'; ctx.fillRect(px+3-camX, py+8-camY, 2, 3);
   ctx.fillStyle = '#4ecdc4'; ctx.fillRect(px+11-camX, py+8-camY, 2, 3);
+}
+
+function drawDialog() {
+  if (!inDialog) return;
+  drawBox(8, 200, 304, 72, '#f8f8f8', '#111');
+  ctx.fillStyle = '#111';
+  ctx.font = '10px monospace';
+  const lines = wrapText(dialogQueue[dialogIndex] || '', 36);
+  lines.forEach((ln, i) => ctx.fillText(ln, 16, 220 + i*12));
+  ctx.fillText('▼', 290, 262);
+}
+
+function wrapText(str, max) {
+  const words = str.split(' ');
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    if ((cur + ' ' + w).trim().length > max) { lines.push(cur.trim()); cur = w; }
+    else cur = (cur + ' ' + w).trim();
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 4);
+}
+
+function drawBattle() {
+  if (!inBattle || !enemy) return;
+  ctx.fillStyle = '#1a2a1a';
+  ctx.fillRect(0, 0, 320, 288);
+  // Enemy box top right
+  drawBox(180, 16, 128, 48, '#f8f8f8', '#111');
+  ctx.fillStyle = '#111';
+  ctx.font = '9px monospace';
+  ctx.fillText(enemy.name, 188, 32);
+  drawHPBar(188, 40, 80, enemy.hp, enemy.max, 'HP');
+  // Player box bottom left
+  drawBox(8, 160, 140, 48, '#f8f8f8', '#111');
+  ctx.fillStyle = '#111';
+  ctx.font = '9px monospace';
+  ctx.fillText('Hootling', 16, 176);
+  drawHPBar(16, 184, 90, playerHp, playerMax, 'HP');
+  // Menu box
+  drawBox(160, 200, 152, 72, '#f8f8f8', '#111');
+  ctx.fillStyle = '#111';
+  ctx.font = '10px monospace';
+  const opts = ['FIGHT', 'ITEM', 'RUN'];
+  opts.forEach((o, i) => {
+    ctx.fillText((battleMenu===i?'▶ ':'  ')+o, 172, 220 + i*18);
+  });
+  // Log
+  drawBox(8, 200, 144, 72, '#f8f8f8', '#111');
+  ctx.fillStyle = '#111';
+  ctx.font = '9px monospace';
+  const logLines = wrapText(enemy.log || '', 18);
+  logLines.forEach((ln, i) => ctx.fillText(ln, 16, 220 + i*12));
+}
+
+function draw() {
+  ctx.clearRect(0,0,c.width,c.height);
+  if (inBattle) {
+    drawBattle();
+  } else {
+    drawWorld();
+    if (inDialog) drawDialog();
+  }
 }
 
 function canMove(nx, ny) {
@@ -270,7 +323,7 @@ function updateCamera() {
 }
 
 function update() {
-  if (inDialog || inBattle || inMenu) return;
+  if (inDialog || inBattle) return;
   let nx = px, ny = py;
   const spd = 1.4;
   if (keys.ArrowLeft || keys.a) nx -= spd;
@@ -280,8 +333,6 @@ function update() {
   if (canMove(nx, py)) px = nx;
   if (canMove(px, ny)) py = ny;
   updateCamera();
-
-  // Exits
   const z = getZone();
   z.exits.forEach(ex => {
     if (Math.hypot(px - ex.x, py - ex.y) < 14) {
@@ -294,7 +345,8 @@ function update() {
 }
 
 function interact() {
-  if (inDialog || inBattle || inMenu) return;
+  if (inBattle) return;
+  if (inDialog) { advanceDialog(); return; }
   const z = getZone();
   for (const n of z.npcs) {
     if (n.battle && isDefeated(n.id)) continue;
@@ -318,17 +370,12 @@ function startDialog(lines, after) {
   dialogQueue = lines;
   dialogIndex = 0;
   inDialog = true;
-  document.getElementById('d-text').textContent = dialogQueue[0];
-  document.getElementById('dialog').style.display = 'block';
   window._afterDialog = after;
 }
 
 function advanceDialog() {
   dialogIndex++;
-  if (dialogIndex < dialogQueue.length) {
-    document.getElementById('d-text').textContent = dialogQueue[dialogIndex];
-  } else {
-    document.getElementById('dialog').style.display = 'none';
+  if (dialogIndex >= dialogQueue.length) {
     inDialog = false;
     if (window._afterDialog) window._afterDialog();
     window._afterDialog = null;
@@ -337,74 +384,46 @@ function advanceDialog() {
 
 function startBattle(npc) {
   inBattle = true;
-  window._enemy = { name: npc.name, hp: npc.hp || 35, max: npc.hp || 35, id: npc.id, boss: !!npc.boss };
-  document.getElementById('battle').style.display = 'flex';
-  document.getElementById('e-name').textContent = npc.name;
-  document.getElementById('b-log').textContent = npc.reveal || "A scalper challenges you!";
-  updateBars();
+  battleMenu = 0;
+  enemy = { name: npc.name, hp: npc.hp || 35, max: npc.hp || 35, id: npc.id, boss: !!npc.boss, log: npc.reveal || "A scalper challenges you!" };
 }
 
-function updateBars() {
-  const e = window._enemy || {hp:0,max:1};
-  document.getElementById('p-hp').style.width = (playerHp/playerMax*100)+'%';
-  document.getElementById('e-hp').style.width = (e.hp/e.max*100)+'%';
-  document.getElementById('p-hp-text').textContent = Math.max(0,playerHp)+'/'+playerMax;
-  document.getElementById('e-hp-text').textContent = Math.max(0,e.hp)+'/'+e.max;
-}
-
-function doAttack(move) {
+function battleSelect() {
   if (!inBattle) return;
-  const dmg = move==='peck' ? 7+Math.floor(Math.random()*4) : 12+Math.floor(Math.random()*6);
-  window._enemy.hp -= dmg;
-  document.getElementById('b-log').textContent = `You used ${move==='peck'?'Peck':'Hoot Blast'}! (${dmg})`;
-  updateBars();
-  if (window._enemy.hp <= 0) {
-    document.getElementById('b-log').textContent = window._enemy.boss ? "You defeated the lead scalper! Stock is safe for the kids." : "You win! Stock protected.";
-    markDefeated(window._enemy.id);
-    if (window._enemy.id==='scalper1') setFlag('beat1');
-    if (window._enemy.id==='scalper2') setFlag('beat2');
-    if (window._enemy.boss) setFlag('beatBoss');
-    setTimeout(endBattle, 1600);
-    return;
-  }
-  setTimeout(() => {
-    const edmg = 5 + Math.floor(Math.random()*6) + (window._enemy.boss?3:0);
-    playerHp -= edmg;
-    document.getElementById('b-log').textContent = `${window._enemy.name} attacks! (${edmg})`;
-    updateBars();
-    if (playerHp <= 0) {
-      document.getElementById('b-log').textContent = "You were knocked out. The scalpers clear more stock...";
-      playerHp = Math.floor(playerMax/2);
-      setTimeout(endBattle, 1600);
+  if (battleMenu === 0) { // FIGHT
+    const dmg = 8 + Math.floor(Math.random()*6);
+    enemy.hp -= dmg;
+    enemy.log = `Hootling used Peck! (${dmg})`;
+    if (enemy.hp <= 0) {
+      enemy.log = enemy.boss ? "Lead scalper defeated! Stock is safe." : "You win! Stock protected.";
+      markDefeated(enemy.id);
+      if (enemy.id==='scalper1') setFlag('beat1');
+      if (enemy.id==='scalper2') setFlag('beat2');
+      if (enemy.boss) setFlag('beatBoss');
+      setTimeout(() => { inBattle=false; enemy=null; }, 1400);
+      return;
     }
-  }, 600);
+    setTimeout(() => {
+      const edmg = 5 + Math.floor(Math.random()*5) + (enemy.boss?3:0);
+      playerHp -= edmg;
+      enemy.log = `${enemy.name} attacks! (${edmg})`;
+      if (playerHp <= 0) {
+        enemy.log = "You fainted. Scalpers clear more stock...";
+        playerHp = Math.floor(playerMax/2);
+        setTimeout(() => { inBattle=false; enemy=null; }, 1400);
+      }
+    }, 500);
+  } else if (battleMenu === 1) { // ITEM
+    if (berries > 0) {
+      berries--;
+      playerHp = Math.min(playerMax, playerHp + 18);
+      enemy.log = "Used Nest Berry! HP restored.";
+    } else enemy.log = "No Nest Berries left!";
+  } else { // RUN
+    enemy.log = "Got away!";
+    setTimeout(() => { inBattle=false; enemy=null; }, 600);
+  }
 }
-
-function doHeal() {
-  if (berries <= 0) { document.getElementById('b-log').textContent = "No Nest Berries left!"; return; }
-  berries--;
-  playerHp = Math.min(playerMax, playerHp + 18);
-  document.getElementById('b-log').textContent = "Used Nest Berry! HP restored.";
-  updateBars();
-}
-
-function doRun() {
-  document.getElementById('b-log').textContent = "Got away!";
-  setTimeout(endBattle, 800);
-}
-
-function endBattle() {
-  inBattle = false;
-  document.getElementById('battle').style.display = 'none';
-  document.getElementById('hud').textContent = getZone().name;
-}
-
-function openMenu() {
-  inMenu = true;
-  document.getElementById('inv-text').innerHTML = `HP: ${playerHp}/${playerMax}<br>Nest Berries: ${berries}<br>Flags: ${Object.keys(flags).join(', ')||'none'}`;
-  document.getElementById('menu').style.display = 'block';
-}
-function closeMenu() { inMenu=false; document.getElementById('menu').style.display='none'; }
 
 function loop() {
   update();
@@ -414,8 +433,12 @@ function loop() {
 
 document.addEventListener('keydown', e => {
   keys[e.key] = true;
-  if (e.key === ' ' || e.key === 'Enter') interact();
-  if (e.key === 'm' || e.key === 'M') openMenu();
+  if (e.key === ' ' || e.key === 'Enter') {
+    if (inBattle) battleSelect();
+    else interact();
+  }
+  if (inBattle && (e.key === 'ArrowUp' || e.key === 'w')) battleMenu = Math.max(0, battleMenu-1);
+  if (inBattle && (e.key === 'ArrowDown' || e.key === 's')) battleMenu = Math.min(2, battleMenu+1);
 });
 document.addEventListener('keyup', e => keys[e.key] = false);
 
