@@ -49,6 +49,9 @@
   <div data-m="items">Items</div>
   <div data-m="quests">Quests</div>
   <div data-m="save">Save</div>
+  <div data-m="travel">Travel</div>
+  <div data-m="pc">PC Box</div>
+  <div data-m="rival">Rival</div>
   <div data-m="settings">Settings</div>
   <div data-m="close">Close</div>
 </div>
@@ -155,7 +158,7 @@
   };
 
   function getSave(){
-    return {px:px,py:py,zone:zone,party:party,berries:berries,etbs:etbs,packs:packs,flags:flags,badges:badges,score:score,wins:wins,notes:notes,mute:mute,active:active,tokens:tokens,achievements:achievements,seen:seen,volume:volume,textSpeed:textSpeed};
+    return {px:px,py:py,zone:zone,party:party,berries:berries,etbs:etbs,packs:packs,flags:flags,badges:badges,score:score,wins:wins,notes:notes,mute:mute,active:active,tokens:tokens,achievements:achievements,seen:seen,volume:volume,textSpeed:textSpeed,pc:pc,rivalWins:rivalWins,ngPlus:ngPlus};
   }
   function loadSave(d){
     if(!d) return;
@@ -178,6 +181,9 @@ if(d.achievements) achievements=d.achievements;
 if(d.seen) seen=d.seen;
 if(typeof d.volume==='number') volume=d.volume;
 if(typeof d.textSpeed==='number') textSpeed=d.textSpeed;
+if(d.pc) pc=d.pc;
+if(typeof d.rivalWins==='number') rivalWins=d.rivalWins;
+if(typeof d.ngPlus==='boolean') ngPlus=d.ngPlus;
   }
   try{ var sv=localStorage.getItem('ripz_save'); if(sv) loadSave(JSON.parse(sv)); }catch(e){}
   function unlock(id, msg){
@@ -224,7 +230,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','items','quests','save','settings','close'];
+    var acts=['party','items','quests','save','travel','pc','rival','settings','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
@@ -240,7 +246,16 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
       q.push(flags.beatLead ? 'Lead: beaten' : 'Lead: in alley');
       startDialog(q); closeMenu();
     } else if(a==='save'){ save(); startDialog(['Saved.','Export: copy from console or use getSave()']); closeMenu(); }
-else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length]); closeMenu(); }
+else if(a==='travel'){ fastTravel(); closeMenu(); }
+else if(a==='pc'){
+  if(party.length>1){ var dep=party.pop(); pc.push(dep); startDialog(['Deposited '+dep.name+'. Box: '+pc.length]); }
+  else if(pc.length){ var w=pc.pop(); party.push(w); startDialog(['Withdrew '+w.name+'.']); }
+  else startDialog(['PC empty. Need more than 1 Owlie to deposit.']);
+  closeMenu(); save();
+} else if(a==='rival'){
+  startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true);
+  closeMenu();
+} else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length]); closeMenu(); }
     else closeMenu();
   }
 
@@ -273,7 +288,12 @@ else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.',
     }
   }
 
-  function interact(){
+  function fastTravel(){
+  if(badges<1){ startDialog(['Need a badge first.']); return; }
+  var dest = zone==='plaza'?'route':zone==='route'?'alley':zone==='alley'?'shop':'plaza';
+  zone=dest; px=4*TILE; py=4*TILE; flashZone(zone); save();
+}
+function interact(){
     if(dialog){ advanceDialog(); return; }
     if(menuOpen){ menuAction(); return; }
     if(inBattle){ battleAction(); return; }
@@ -354,12 +374,14 @@ seen[wild.name]=true;
     var p=party[active];
     if(a==='fight'){
       var dmg = p.atk + (Math.random()<0.15 ? 4 : 0);
+if(Math.random()<0.1){ dmg+=2; battleLog.push('Burn!'); }
       wild.hp -= dmg;
       shake=6; beep(280,0.07);
-      battleLog.push('You hit for '+dmg);
+      battleLog.push('You hit for '+dmg); shake=4;
       if(wild.hp<=0){
         if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); }
-        if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; }
+        if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; if(!ngPlus){ ngPlus=true; startDialog(['New Game+ unlocked!']); } }
+if(wild.name==='Rival'){ rivalWins++; unlock('rival','Beat Rival'); }
         startDialog(['You won!']); endBattle(true,false); return;
       }
       var back = Math.max(1, wild.atk - Math.floor(p.def/3));
