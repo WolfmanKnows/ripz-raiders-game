@@ -1,1 +1,533 @@
-FILE_CONTENT_HERE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>RIPZ Raiders</title>
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; touch-action:none; font-family:monospace; }
+  #wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#111; }
+  canvas { image-rendering:pixelated; image-rendering:crisp-edges; background:#88c070; display:block; }
+  #ui { position:absolute; bottom:6px; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-end; padding:0 10px 4px; pointer-events:none; z-index:10; }
+  #dpad, #buttons { pointer-events:auto; }
+  #dpad { display:grid; grid-template-columns:60px 60px 60px; grid-template-rows:60px 60px 60px; gap:3px; }
+  #dpad button, #buttons button { width:60px; height:60px; font-size:22px; font-weight:bold; background:#222; color:#eee; border:3px solid #777; border-radius:12px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+  #dpad button:active, #buttons button:active { background:#555; }
+  #buttons { display:flex; gap:14px; align-items:center; }
+  #buttons button.a { background:#2a5; }
+  #buttons button.b { background:#a42; }
+  #buttons button.s { background:#25a; width:78px; font-size:13px; }
+  #dialog { position:absolute; bottom:110px; left:6px; right:6px; background:#000; color:#fff; border:4px solid #fff; padding:16px; font-size:16px; line-height:1.4; display:none; z-index:20; pointer-events:auto; }
+  #menu, #battleMenu { position:absolute; background:#000; color:#fff; border:4px solid #fff; padding:6px; display:none; z-index:20; pointer-events:auto; }
+  #menu { top:32px; right:10px; min-width:160px; }
+  #battleMenu { bottom:110px; right:10px; min-width:150px; }
+  #menu div, #battleMenu div { padding:12px 16px; font-size:16px; }
+  #menu div.sel, #battleMenu div.sel { background:#fff; color:#000; }
+  #hud { position:absolute; top:6px; left:6px; color:#fff; background:#000c; padding:4px 8px; font-size:12px; z-index:15; pointer-events:none; }
+  #zoneFlash { position:absolute; top:40%; left:0; right:0; text-align:center; color:#fff; font-size:22px; font-weight:bold; text-shadow:2px 2px #000; display:none; z-index:25; pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c" width="160" height="144"></canvas></div>
+<div id="hud">Score 0</div>
+<div id="zoneFlash"></div>
+<div id="ui">
+  <div id="dpad">
+    <div></div><button data-dir="up">▲</button><div></div>
+    <button data-dir="left">◀</button><div></div><button data-dir="right">▶</button>
+    <div></div><button data-dir="down">▼</button><div></div>
+  </div>
+  <div id="buttons">
+    <button class="b" id="btnB">B</button>
+    <button class="a" id="btnA">A</button>
+    <button class="s" id="btnStart">MENU</button>
+  </div>
+</div>
+<div id="dialog"></div>
+<div id="menu">
+  <div data-m="party">Party</div>
+  <div data-m="items">Items</div>
+  <div data-m="quests">Quests</div>
+  <div data-m="save">Save</div>
+  <div data-m="close">Close</div>
+</div>
+<div id="battleMenu">
+  <div data-b="fight">Fight</div>
+  <div data-b="item">Item</div>
+  <div data-b="swap">Swap</div>
+  <div data-b="catch">Catch</div>
+  <div data-b="run">Run</div>
+</div>
+<script>
+(function(){
+  'use strict';
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  var TILE = 16, scale = 1;
+  var px = 4*TILE, py = 4*TILE, facing = 0, frame = 0, zone = 'plaza';
+  var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust']}];
+  var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
+  var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
+  var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [];
+  var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0;
+  var wins = 0, notes = 0;
+
+  var zones = {
+    plaza: {
+      w:12, h:10,
+      map:[
+        [1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,2,0,0,0,3,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,4,0,0,0,0,5,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,6,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,7,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1]
+      ],
+      npcs:[
+        {x:2*TILE,y:2*TILE,name:'Shopkeeper',lines:['SWAP berries for packs.','Counter is open.']},
+        {x:6*TILE,y:2*TILE,name:'Kid',lines:['Grass has Owlies.','Weaken then Catch.']},
+        {x:8*TILE,y:4*TILE,name:'Pat',lines:['Find the note on the route.','Then beat the scalper.']},
+        {x:9*TILE,y:8*TILE,name:'Guide',lines:['North to the route.','East to the alley.']}
+      ],
+      exits:[
+        {x:5,y:1,to:'route',px:5*TILE,py:8*TILE},
+        {x:5,y:8,to:'shop',px:5*TILE,py:1*TILE},
+        {x:10,y:5,to:'alley',px:1*TILE,py:5*TILE}
+      ]
+    },
+    route: {
+      w:12, h:10,
+      map:[
+        [1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,3,3,3,0,0,0,0,1],
+        [1,0,0,0,3,3,3,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1]
+      ],
+      npcs:[
+        {x:3*TILE,y:4*TILE,name:'Note',lines:['A note: Scalpers meet in the alley.']},
+        {x:8*TILE,y:4*TILE,name:'Scalper',lines:['These packs are mine!']}
+      ],
+      exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE}]
+    },
+    shop: {
+      w:10, h:8,
+      map:[
+        [1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,2,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1]
+      ],
+      npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP 2 berries for a pack.']}],
+      exits:[{x:5,y:1,to:'plaza',px:5*TILE,py:8*TILE}]
+    },
+    alley: {
+      w:10, h:8,
+      map:[
+        [1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1]
+      ],
+      npcs:[{x:6*TILE,y:3*TILE,name:'Lead Scalper',lines:['You found us. Fight.']}],
+      exits:[{x:1,y:5,to:'plaza',px:10*TILE,py:5*TILE}]
+    }
+  };
+
+  function getSave(){
+    return {px:px,py:py,zone:zone,party:party,berries:berries,etbs:etbs,packs:packs,flags:flags,badges:badges,score:score,wins:wins,notes:notes,mute:mute,active:active};
+  }
+  function loadSave(d){
+    if(!d) return;
+    if(typeof d.px==='number') px=d.px;
+    if(typeof d.py==='number') py=d.py;
+    if(d.zone && zones[d.zone]) zone=d.zone;
+    if(d.party && d.party.length) party=d.party;
+    if(typeof d.berries==='number') berries=d.berries;
+    if(typeof d.etbs==='number') etbs=d.etbs;
+    if(typeof d.packs==='number') packs=d.packs;
+    if(d.flags) flags=d.flags;
+    if(typeof d.badges==='number') badges=d.badges;
+    if(typeof d.score==='number') score=d.score;
+    if(typeof d.wins==='number') wins=d.wins;
+    if(typeof d.notes==='number') notes=d.notes;
+    if(typeof d.mute==='boolean') mute=d.mute;
+    if(typeof d.active==='number') active=d.active;
+  }
+  try{ var sv=localStorage.getItem('ripz_save'); if(sv) loadSave(JSON.parse(sv)); }catch(e){}
+  function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave())); }catch(e){} }
+
+  function beep(freq, dur){
+    if(mute) return;
+    try{
+      var ac = new (window.AudioContext||window.webkitAudioContext)();
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.frequency.value = freq; o.type='square';
+      g.gain.setValueAtTime(0.07, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
+      o.start(); o.stop(ac.currentTime+dur);
+    }catch(e){}
+  }
+
+  function flashZone(name){
+    var el = document.getElementById('zoneFlash');
+    el.textContent = name.toUpperCase();
+    el.style.display = 'block';
+    zoneTimer = 40;
+  }
+
+  function startDialog(lines){
+    dialog=lines; dialogIdx=0;
+    var el=document.getElementById('dialog');
+    el.style.display='block'; el.textContent=lines[0];
+    beep(440,0.05);
+  }
+  function advanceDialog(){
+    if(!dialog) return;
+    dialogIdx++;
+    if(dialogIdx>=dialog.length){ dialog=null; document.getElementById('dialog').style.display='none'; }
+    else document.getElementById('dialog').textContent=dialog[dialogIdx];
+  }
+  function openMenu(){ menuOpen=true; menuSel=0; document.getElementById('menu').style.display='block'; updateMenu(); }
+  function closeMenu(){ menuOpen=false; document.getElementById('menu').style.display='none'; }
+  function updateMenu(){
+    var items=document.querySelectorAll('#menu div');
+    for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
+  }
+  function menuAction(){
+    var acts=['party','items','quests','save','close'];
+    var a=acts[menuSel];
+    if(a==='party'){
+      var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
+      lines.push('Tap again to cycle lead.');
+      startDialog(lines); closeMenu();
+    } else if(a==='items'){
+      startDialog(['Berries: '+berries+' (heal)','Packs: '+packs+' (open for bonus)','ETBs: '+etbs]);
+      closeMenu();
+    } else if(a==='quests'){
+      var q = [];
+      q.push(flags.gotNote ? 'Note: found' : 'Note: find on route');
+      q.push(flags.beatScalper ? 'Scalper: beaten' : 'Scalper: not yet');
+      q.push(flags.beatLead ? 'Lead: beaten' : 'Lead: in alley');
+      startDialog(q); closeMenu();
+    } else if(a==='save'){ save(); startDialog(['Saved.']); closeMenu(); }
+    else closeMenu();
+  }
+
+  function z(){ return zones[zone]; }
+  function tileAt(tx,ty){
+    var m=z().map;
+    if(ty<0||tx<0||ty>=m.length||tx>=m[0].length) return 1;
+    return m[ty][tx];
+  }
+  function solid(tx,ty){ return tileAt(tx,ty)===1; }
+
+  function tryMove(dx,dy){
+    if(dialog||menuOpen||inBattle||fade>0) return;
+    var nx=px+dx, ny=py+dy;
+    var tx=Math.floor(nx/TILE), ty=Math.floor(ny/TILE);
+    if(!solid(tx,ty)){ px=nx; py=ny; frame=(frame+1)%2; beep(160,0.02); }
+    if(dx<0) facing=2; else if(dx>0) facing=3; else if(dy<0) facing=1; else facing=0;
+    var exits=z().exits||[];
+    for(var i=0;i<exits.length;i++){
+      var e=exits[i];
+      if(tx===e.x && ty===e.y){
+        fade=8;
+        setTimeout(function(){
+          zone=e.to; px=e.px; py=e.py; save();
+          flashZone(zone);
+          fade=0;
+        }, 120);
+        return;
+      }
+    }
+  }
+
+  function interact(){
+    if(dialog){ advanceDialog(); return; }
+    if(menuOpen){ menuAction(); return; }
+    if(inBattle){ battleAction(); return; }
+    var fx=px, fy=py;
+    if(facing===0) fy+=TILE; else if(facing===1) fy-=TILE; else if(facing===2) fx-=TILE; else fx+=TILE;
+    var npcs=z().npcs||[];
+    for(var i=0;i<npcs.length;i++){
+      var n=npcs[i];
+      if(Math.abs(n.x-fx)<12 && Math.abs(n.y-fy)<12){
+        if(n.name==='Clerk'){
+          if(berries>=2){ berries-=2; packs++; startDialog(['SWAP done. Got a pack.']); save(); }
+          else startDialog(['Need 2 berries.']);
+        } else if(n.name==='Note' && !flags.gotNote){
+          flags.gotNote=true; notes++;
+          startDialog(['You found the note.','Scalpers meet in the alley.']);
+          save();
+        } else if(n.name==='Scalper' && !flags.beatScalper){
+          startBattle({name:'Scalper',hp:30,max:30,atk:9,def:4}, true);
+        } else if(n.name==='Lead Scalper' && !flags.beatLead){
+          startBattle({name:'Lead Scalper',hp:40,max:40,atk:11,def:5}, true);
+        } else startDialog(n.lines);
+        return;
+      }
+    }
+    var tx=Math.floor(fx/TILE), ty=Math.floor(fy/TILE);
+    if(tileAt(tx,ty)===2){
+      if(berries>=1){
+        berries--;
+        var p=party[active];
+        p.hp=Math.min(p.max, p.hp+14);
+        startDialog(['Used a Berry. HP restored.']);
+        beep(520,0.08);
+      } else startDialog(['No Berries.']);
+    }
+  }
+
+  function gainXP(amount){
+    var p=party[active];
+    p.xp += amount;
+    if(p.xp >= p.lvl*8){
+      p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
+      beep(600,0.12);
+      return true;
+    }
+    return false;
+  }
+
+  function startBattle(w, isTrainer){
+    inBattle=true; wild=w||{name:'Wild Owlie',hp:18,max:18,atk:7,def:3}; battleSel=0; battleLog=[];
+    document.getElementById('battleMenu').style.display='block';
+    updateBattle();
+    startDialog([(isTrainer?'Trainer challenge: ':'A wild ')+wild.name+'!']);
+  }
+  function updateBattle(){
+    var items=document.querySelectorAll('#battleMenu div');
+    for(var i=0;i<items.length;i++) items[i].className = i===battleSel ? 'sel' : '';
+  }
+  function endBattle(win, caught){
+    inBattle=false; wild=null;
+    document.getElementById('battleMenu').style.display='none';
+    if(win){
+      wins++;
+      score += caught ? 20 : 12;
+      berries++;
+      if(Math.random()<0.35) packs++;
+      if(gainXP(caught?6:4)) startDialog(['Level up!']);
+    }
+    save();
+  }
+  function battleAction(){
+    if(!inBattle||!wild) return;
+    if(dialog){ advanceDialog(); return; }
+    var acts=['fight','item','swap','catch','run'];
+    var a=acts[battleSel];
+    var p=party[active];
+    if(a==='fight'){
+      var dmg = p.atk + (Math.random()<0.15 ? 4 : 0);
+      wild.hp -= dmg;
+      shake=6; beep(280,0.07);
+      battleLog.push('You hit for '+dmg);
+      if(wild.hp<=0){
+        if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; }
+        if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; }
+        startDialog(['You won!']); endBattle(true,false); return;
+      }
+      var back = Math.max(1, wild.atk - Math.floor(p.def/3));
+      p.hp -= back;
+      battleLog.push('Took '+back);
+      if(p.hp<=0){ p.hp=1; startDialog(['Your Owlie is tired.']); endBattle(false,false); return; }
+      startDialog(['Hit for '+dmg+'!','Enemy hit for '+back+'.']);
+    } else if(a==='item'){
+      if(berries>=1 && p.hp<p.max){ berries--; p.hp=Math.min(p.max, p.hp+12); startDialog(['Berry used.']); beep(500,0.06); }
+      else if(packs>=1){ packs--; berries+=2; startDialog(['Opened pack. Got berries.']); }
+      else startDialog(['Nothing useful.']);
+    } else if(a==='swap'){
+      if(party.length>1){ active=(active+1)%party.length; startDialog(['Lead is now '+party[active].name+'.']); }
+      else startDialog(['Only one Owlie.']);
+    } else if(a==='catch'){
+      if(wild.name.indexOf('Scalper')>=0){ startDialog(['Cannot catch trainers.']); return; }
+      var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
+      if(Math.random()<chance && party.length<5){
+        party.push({name:wild.name, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:3, lvl:4, xp:0, moves:['Peck']});
+        beep(700,0.15);
+        startDialog(['Got it!']); endBattle(true,true);
+      } else startDialog(['Almost! It broke free.']);
+    } else {
+      var runChance = 0.5 + (p.lvl*0.02);
+      if(Math.random()<runChance){ startDialog(['Got away!']); endBattle(false,false); }
+      else startDialog(['Could not run!']);
+    }
+  }
+
+  function drawBar(x,y,w,h,cur,max,col){
+    ctx.fillStyle='#000'; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle=col; ctx.fillRect(x+1,y+1, Math.max(0, (w-2)*(cur/max)), h-2);
+  }
+
+  function drawSprite(x,y,body,eyes){
+    ctx.fillStyle=body;
+    ctx.fillRect(x,y,TILE-2,TILE-2);
+    if(eyes){
+      ctx.fillStyle='#fff';
+      ctx.fillRect(x+3,y+4,3,3); ctx.fillRect(x+8,y+4,3,3);
+      ctx.fillStyle='#000';
+      ctx.fillRect(x+4,y+5,2,2); ctx.fillRect(x+9,y+5,2,2);
+    }
+  }
+
+  function draw(){
+    var w=canvas.width, h=canvas.height;
+    ctx.save();
+    if(shake>0){ ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h);
+    var zm=z();
+    var ox=Math.floor((w - zm.w*TILE)/2);
+    var oy=Math.floor((h - zm.h*TILE)/2);
+    var colors={0:'#70c060',1:'#1a5030',2:'#d06030',3:'#48a048',4:'#b09050',5:'#5070b0',6:'#909090',7:'#c0c0c0'};
+    for(var y=0;y<zm.h;y++){
+      for(var x=0;x<zm.w;x++){
+        var t=zm.map[y][x];
+        ctx.fillStyle=colors[t]||'#70c060';
+        ctx.fillRect(ox+x*TILE, oy+y*TILE, TILE, TILE);
+        if(t===3){ ctx.fillStyle='#206020'; ctx.fillRect(ox+x*TILE+2, oy+y*TILE+2, 4, 4); }
+      }
+    }
+    var npcs=zm.npcs||[];
+    for(var i=0;i<npcs.length;i++){
+      var n=npcs[i];
+      var col = n.name.indexOf('Scalper')>=0 ? '#c03030' : n.name==='Clerk'||n.name==='Shopkeeper' ? '#f0c080' : n.name==='Note' ? '#e0e080' : '#c0b090';
+      drawSprite(ox+n.x, oy+n.y, col, n.name!=='Note');
+    }
+    drawSprite(ox+px, oy+py, '#3050b0', true);
+
+    if(inBattle && wild){
+      ctx.fillStyle='#000d'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#fff'; ctx.font='9px monospace';
+      ctx.fillText(wild.name, 90, 18);
+      drawBar(90,22,60,6, Math.max(0,wild.hp), wild.max, '#e04040');
+      ctx.fillText(party[active].name+' Lv'+party[active].lvl, 8, 100);
+      drawBar(8,104,70,6, party[active].hp, party[active].max, '#40c040');
+      drawSprite(110, 36, '#c05040', true);
+      drawSprite(16, 60, '#3050b0', true);
+      if(battleLog.length){
+        ctx.fillText(battleLog[battleLog.length-1], 8, 130);
+      }
+    }
+    if(fade>0){ ctx.fillStyle='rgba(0,0,0,'+(fade/10)+')'; ctx.fillRect(0,0,w,h); }
+    ctx.restore();
+
+    var hud = 'S'+score+' B'+badges+' W'+wins+' '+zone;
+    if(notes) hud += ' N'+notes;
+    document.getElementById('hud').textContent = hud;
+    if(zoneTimer>0){ zoneTimer--; if(zoneTimer<=0) document.getElementById('zoneFlash').style.display='none'; }
+    requestAnimationFrame(draw);
+  }
+
+  function resize(){
+    var vw=window.innerWidth, vh=window.innerHeight;
+    var sx=Math.floor(vw/canvas.width), sy=Math.floor(vh/canvas.height);
+    scale=Math.max(1, Math.min(sx,sy));
+    canvas.style.width=(canvas.width*scale)+'px';
+    canvas.style.height=(canvas.height*scale)+'px';
+  }
+  window.addEventListener('resize', resize); resize();
+
+  window.addEventListener('keydown', function(e){
+    keys[e.key]=true;
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); interact(); }
+    if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) openMenu(); }
+    if(e.key==='n'){ mute=!mute; startDialog([mute?'Muted.':'Sound on.']); }
+    if(menuOpen){
+      if(e.key==='ArrowUp'){ menuSel=(menuSel+4)%5; updateMenu(); }
+      if(e.key==='ArrowDown'){ menuSel=(menuSel+1)%5; updateMenu(); }
+    }
+    if(inBattle){
+      if(e.key==='ArrowUp'){ battleSel=(battleSel+4)%5; updateBattle(); }
+      if(e.key==='ArrowDown'){ battleSel=(battleSel+1)%5; updateBattle(); }
+    }
+  });
+  window.addEventListener('keyup', function(e){ keys[e.key]=false; });
+
+  function loop(){
+    if(keys['ArrowLeft']||keys['a']) tryMove(-4,0);
+    if(keys['ArrowRight']||keys['d']) tryMove(4,0);
+    if(keys['ArrowUp']||keys['w']) tryMove(0,-4);
+    if(keys['ArrowDown']||keys['s']) tryMove(0,4);
+    if(touchDir==='left') tryMove(-4,0);
+    if(touchDir==='right') tryMove(4,0);
+    if(touchDir==='up') tryMove(0,-4);
+    if(touchDir==='down') tryMove(0,4);
+    setTimeout(loop, 65);
+  }
+  loop();
+
+  var dpad=document.querySelectorAll('#dpad button');
+  for(var i=0;i<dpad.length;i++){
+    (function(btn){
+      var dir=btn.getAttribute('data-dir');
+      btn.addEventListener('touchstart', function(e){ e.preventDefault(); touchDir=dir; }, {passive:false});
+      btn.addEventListener('touchend', function(e){ e.preventDefault(); touchDir=null; }, {passive:false});
+      btn.addEventListener('mousedown', function(){ touchDir=dir; });
+      btn.addEventListener('mouseup', function(){ touchDir=null; });
+      btn.addEventListener('mouseleave', function(){ touchDir=null; });
+    })(dpad[i]);
+  }
+  document.getElementById('btnA').addEventListener('click', interact);
+  document.getElementById('btnA').addEventListener('touchstart', function(e){ e.preventDefault(); interact(); }, {passive:false});
+  document.getElementById('btnB').addEventListener('click', function(){
+    if(dialog) advanceDialog();
+    else if(menuOpen) closeMenu();
+    else if(inBattle){ battleSel=3; updateBattle(); battleAction(); }
+  });
+  document.getElementById('btnStart').addEventListener('click', function(){
+    if(inBattle) return;
+    if(menuOpen) closeMenu(); else openMenu();
+  });
+  document.getElementById('dialog').addEventListener('click', advanceDialog);
+  document.getElementById('dialog').addEventListener('touchstart', function(e){ e.preventDefault(); advanceDialog(); }, {passive:false});
+
+  var mItems=document.querySelectorAll('#menu div');
+  for(var j=0;j<mItems.length;j++){
+    (function(el,idx){ el.addEventListener('click', function(){ menuSel=idx; updateMenu(); menuAction(); }); })(mItems[j],j);
+  }
+  var bItems=document.querySelectorAll('#battleMenu div');
+  for(var k=0;k<bItems.length;k++){
+    (function(el,idx){ el.addEventListener('click', function(){ battleSel=idx; updateBattle(); battleAction(); }); })(bItems[k],k);
+  }
+
+  setInterval(function(){
+    if(dialog||menuOpen||inBattle) return;
+    var tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
+    if(tileAt(tx,ty)===3){
+      grassTicks++;
+      if(grassTicks>5 && Math.random()<0.2){ grassTicks=0; startBattle(); }
+    } else grassTicks=0;
+  }, 320);
+
+  if(navigator.vibrate){
+    var oldInteract = interact;
+    // light haptic on A press already handled by button; optional
+  }
+
+  draw();
+})();
+</script>
+</body>
+</html>
