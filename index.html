@@ -571,6 +571,26 @@ function updateWalk() {
   let speed = near ? 6 : 20;
   if (npcWalkTimer > speed) { npcWalkTimer = 0; npcWalkFrame = (npcWalkFrame + 1) % 4; }
 }
+
+function drawStatScreen() {
+  if (!statScreen || party.length === 0) return;
+  const m = party[statIndex] || party[0];
+  ctx.fillStyle = "rgba(0,0,0,0.85)";
+  ctx.fillRect(20, 20, 280, 248);
+  ctx.strokeStyle = "#c9a227";
+  ctx.strokeRect(20, 20, 280, 248);
+  ctx.fillStyle = "#fff";
+  ctx.font = "12px monospace";
+  ctx.fillText(m.name, 32, 40);
+  ctx.font = "9px monospace";
+  ctx.fillText("HP:  " + m.hp + " / " + m.max, 32, 60);
+  ctx.fillText("ATK: " + (m.atk||7), 32, 76);
+  ctx.fillText("DEF: " + (m.def||5), 32, 92);
+  ctx.fillText("SPD: " + (m.spd||6), 32, 108);
+  ctx.fillText("Moves: " + (m.moves||["Peck"]).join(", "), 32, 130);
+  ctx.fillText("Press P to close | Left/Right to switch", 32, 250);
+}
+
 function draw() {
   ctx.clearRect(0, 0, c.width, c.height);
   if (inBattle) drawBattle();
@@ -584,6 +604,7 @@ function draw() {
     if (hitStun.timer <= 0) hitStun.active = false;
   }
   drawEffect();
+  if (statScreen) drawStatScreen();
 }
 
 function canMove(nx, ny) {
@@ -779,6 +800,9 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'm' || e.key === 'M') openParty();
   if (e.key === 'o' || e.key === 'O') openSealed();
+  if (e.key === 'p' || e.key === 'P') { statScreen = !statScreen; statIndex = 0; }
+  if (statScreen && (e.key === 'ArrowLeft' || e.key === 'a')) statIndex = Math.max(0, statIndex-1);
+  if (statScreen && (e.key === 'ArrowRight' || e.key === 'd')) statIndex = Math.min(party.length-1, statIndex+1);
   if (inBattle && (e.key === 'ArrowUp' || e.key === 'w')) battleMenu = Math.max(0, battleMenu-1);
   if (inBattle && (e.key === 'ArrowDown' || e.key === 's')) battleMenu = Math.min(2, battleMenu+1);
 });
