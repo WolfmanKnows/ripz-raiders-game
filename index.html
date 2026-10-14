@@ -586,7 +586,17 @@ function updateWalk() {
 
 function drawStatScreen() {
   if (!statScreen || party.length === 0) return;
-  const m = party[statIndex] || party[0];
+  let list = shinyFilter ? party.filter(p => p.shiny) : party;
+  if (list.length === 0) {
+    ctx.fillStyle = "rgba(0,0,0,0.85)";
+    ctx.fillRect(20, 20, 280, 248);
+    ctx.fillStyle = "#fff";
+    ctx.font = "10px monospace";
+    ctx.fillText("No shinies. Press F to clear filter.", 32, 120);
+    return;
+  }
+  if (statIndex >= list.length) statIndex = 0;
+  const m = list[statIndex];
   ctx.fillStyle = "rgba(0,0,0,0.85)";
   ctx.fillRect(20, 20, 280, 248);
   ctx.strokeStyle = "#c9a227";
@@ -603,7 +613,7 @@ function drawStatScreen() {
   ctx.fillText("DEF: " + (m.def||5), 32, 92);
   ctx.fillText("SPD: " + (m.spd||6), 32, 108);
   ctx.fillText("Moves: " + (m.moves||["Peck"]).join(", "), 32, 130);
-  ctx.fillText("Press P to close | Left/Right to switch", 32, 250);
+  ctx.fillText("P=close | L/R=switch | F=shiny filter", 32, 250);
 }
 
 function draw() {
@@ -834,6 +844,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'm' || e.key === 'M') openParty();
   if (e.key === 'o' || e.key === 'O') openSealed();
   if (e.key === 'p' || e.key === 'P') { statScreen = !statScreen; statIndex = 0; }
+  if (statScreen && (e.key === 'f' || e.key === 'F')) { shinyFilter = !shinyFilter; statIndex = 0; }
   if (statScreen && (e.key === 'ArrowLeft' || e.key === 'a')) statIndex = Math.max(0, statIndex-1);
   if (statScreen && (e.key === 'ArrowRight' || e.key === 'd')) statIndex = Math.min(party.length-1, statIndex+1);
   if (inBattle && (e.key === 'ArrowUp' || e.key === 'w')) battleMenu = Math.max(0, battleMenu-1);
