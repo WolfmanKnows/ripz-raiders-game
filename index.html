@@ -127,7 +127,60 @@ const zones = {
         "That tall guy took so many. Maximum effort, minimum kids."
       ]}
     ],
-    exits: [{ x:22*16, y:8*16, to:'route', px:2*16, py:8*16 }]
+    exits: [
+      { x:22*16, y:8*16, to:'route', px:2*16, py:8*16 },
+      { x:4*16, y:4*16, to:'mart', px:10*16, py:14*16 }
+    ]
+  },
+
+  mart: {
+    name: "Pack Mart",
+    w: 22, h: 18,
+    map: [
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+      [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+      [2,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,2],
+      [2,1,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,2],
+      [2,1,3,0,5,5,5,0,0,5,5,5,0,0,5,5,5,0,0,3,1,2],
+      [2,1,3,0,5,5,5,0,0,5,5,5,0,0,5,5,5,0,0,3,1,2],
+      [2,1,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,2],
+      [2,1,3,0,5,5,5,0,0,5,5,5,0,0,5,5,5,0,0,3,1,2],
+      [2,1,3,0,5,5,5,0,0,5,5,5,0,0,5,5,5,0,0,3,1,2],
+      [2,1,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,2],
+      [2,1,3,0,5,5,5,0,0,5,5,5,0,0,5,5,5,0,0,3,1,2],
+      [2,1,3,0,5,5,5,0,0,5,5,5,0,0,5,5,5,0,0,3,1,2],
+      [2,1,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,2],
+      [2,1,3,3,3,3,3,3,3,3,4,3,3,3,3,3,3,3,3,3,1,2],
+      [2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+    ],
+    solid: {2:1, 3:1},
+    npcs: [
+      { id:'clerk', x:10*16, y:6*16, name:'Clerk', lines:[
+        "Welcome to Pack Mart.",
+        "Shelves are almost empty. Those hoodie guys bought everything.",
+        "A few ETBs and packs left if you're quick."
+      ]},
+      { id:'shelf1', x:4*16, y:5*16, name:'Shelf', lines:[
+        "Elite Trainer Box - still sealed.",
+        "Looks like someone already took three."
+      ], item:'etb' },
+      { id:'shelf2', x:10*16, y:5*16, name:'Shelf', lines:[
+        "Booster packs. Half the row is gone.",
+        "One left if you want it."
+      ], item:'pack' },
+      { id:'shelf3', x:16*16, y:8*16, name:'Shelf', lines:[
+        "Empty. Scalpers cleared this aisle.",
+        "Kids are gonna be mad."
+      ]},
+      { id:'scalper_mart', x:14*16, y:10*16, name:'Suspicious Guy', lines:[
+        "Just restocking for the kids..."
+      ], battle: true, mon:'packrat', reveal:"You're not who you said you were! You're trying to buy out Walmart!" }
+    ],
+    exits: [{ x:10*16, y:15*16, to:'plaza', px:6*16, py:6*16 }],
+    wild: []
   },
   route: {
     name: "Grass Route",
@@ -409,6 +462,13 @@ function interact() {
     if (d < 28) {
       if (n.battle) startDialog(n.lines, () => startBattle(n));
       else if (n.choice) { dialogChoice = true; startDialog(n.lines, () => handleChoice(n)); }
+      else if (n.item) {
+        startDialog(n.lines, () => {
+          if (n.item === 'etb' && !flags.gotETB) { etbs++; setFlag('gotETB'); startDialog(["You grabbed the last ETB!"], null); }
+          else if (n.item === 'pack' && !flags.gotPack) { packs++; setFlag('gotPack'); startDialog(["You took the remaining pack."], null); }
+          else startDialog(["Nothing left here."], null);
+        });
+      }
       else startDialog(n.lines, () => { if (n.id === 'shop') setFlag('talkedShop'); });
       return;
     }
@@ -496,7 +556,7 @@ function battleSelect() {
 
 function openParty() {
   const names = party.map((p,i) => (i+1)+'. '+p.name+' '+p.hp+'/'+p.max).join(' | ');
-  startDialog(["Party: "+names, "Berries: "+berries+"  Move Scroll: "+(moveTutorItem?'Yes':'No')], null);
+  startDialog(["Party: "+names, "Berries: "+berries+"  ETBs: "+etbs+"  Packs: "+packs+"  Move Scroll: "+(moveTutorItem?'Yes':'No')], null);
 }
 
 function loop() { update(); draw(); requestAnimationFrame(loop); }
