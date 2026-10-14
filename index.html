@@ -74,6 +74,41 @@
   var TILE = 16, scale = 1;
   var px = 4*TILE, py = 4*TILE, facing = 0, frame = 0, zone = 'plaza';
   var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust'], shiny:false, held:'Berry'}];
+
+  var MONSTERS = [
+    {id:'hootling', stages:['Hootling','Owlet','Owlie'], baseHp:22, baseAtk:9, color:'#4060c0'},
+    {id:'packrat', stages:['Packrat','Hoarder','Vaultlord'], baseHp:20, baseAtk:8, color:'#c06040'},
+    {id:'foilpup', stages:['Foilpup','Shimmer','Gleamowl'], baseHp:18, baseAtk:10, color:'#e0c040'},
+    {id:'nestling', stages:['Nestling','Branchowl','Canopy'], baseHp:24, baseAtk:7, color:'#60a060'},
+    {id:'screech', stages:['Screech','Howl','Nightcall'], baseHp:19, baseAtk:11, color:'#8040a0'},
+    {id:'pebble', stages:['Pebble','Boulder','Cragowl'], baseHp:26, baseAtk:6, color:'#808080'},
+    {id:'spark', stages:['Spark','Volt','Thunderowl'], baseHp:17, baseAtk:12, color:'#40c0e0'},
+    {id:'moss', stages:['Moss','Fern','Elderowl'], baseHp:23, baseAtk:8, color:'#408040'},
+    {id:'dune', stages:['Dune','Sandowl','Mirage'], baseHp:21, baseAtk:9, color:'#c0a060'},
+    {id:'frost', stages:['Frost','Iceowl','Glacier'], baseHp:20, baseAtk:9, color:'#a0d0e0'},
+    {id:'ember', stages:['Ember','Blaze','Phoenixowl'], baseHp:18, baseAtk:11, color:'#e04020'}
+  ];
+  function randomWild(){
+    var m = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
+    var stage = 0;
+    var name = m.stages[stage];
+    var hp = m.baseHp + Math.floor(Math.random()*6);
+    return {name:name, species:m.id, stage:stage, hp:hp, max:hp, atk:m.baseAtk+Math.floor(Math.random()*3), def:3+Math.floor(Math.random()*2), color:m.color, moves:['Peck','Gust']};
+  }
+  function checkEvo(p){
+    for(var i=0;i<MONSTERS.length;i++){
+      var m=MONSTERS[i];
+      if(p.species===m.id || p.name===m.stages[0] || p.name===m.stages[1]){
+        if(!p.species) p.species=m.id;
+        if(p.stage===undefined) p.stage = m.stages.indexOf(p.name);
+        if(p.stage<0) p.stage=0;
+        if(p.lvl>=6 && p.stage===0){ p.stage=1; p.name=m.stages[1]; p.max+=4; p.atk+=1; p.hp=p.max; return m.stages[1]; }
+        if(p.lvl>=12 && p.stage===1){ p.stage=2; p.name=m.stages[2]; p.max+=6; p.atk+=2; p.hp=p.max; return m.stages[2]; }
+      }
+    }
+    return null;
+  }
+
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
   var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [];
@@ -347,7 +382,7 @@ p.hp=party[active].hp;
   function gainXP(amount){
     var p=party[active];
     p.xp += amount;
-    if(p.name==='Hootling' && p.lvl>=8){ p.name='Owlie'; p.max+=6; p.atk+=2; startDialog(['Hootling evolved into Owlie!']); }
+    var evo=checkEvo(p); if(evo) startDialog([p.name+' evolved into '+evo+'!']);
 if(p.xp >= p.lvl*8){
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
       beep(600,0.12);
@@ -357,7 +392,7 @@ if(p.xp >= p.lvl*8){
   }
 
   function startBattle(w, isTrainer){
-    inBattle=true; wild=w||{name:'Wild Owlie',hp:18,max:18,atk:7,def:3}; battleSel=0; battleLog=[];
+    inBattle=true; wild=w||randomWild(); battleSel=0; battleLog=[];
 seen[wild.name]=true;
     document.getElementById('battleMenu').style.display='block';
     updateBattle();
@@ -417,7 +452,7 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
       var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
       if(Math.random()<chance && party.length<5){
         var isShiny = Math.random()<shinyOdds;
-party.push({name:wild.name, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:3, lvl:4, xp:0, moves:['Peck'], shiny:isShiny, held:null});
+party.push({name:wild.name, species:wild.species, stage:wild.stage||0, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:wild.def||3, lvl:4, xp:0, moves:wild.moves||['Peck'], shiny:isShiny, held:null, color:wild.color});
 if(isShiny) startDialog(['Shiny!']);
         beep(700,0.15);
         startDialog(['Got it!']); unlock('firstcatch','First Catch'); endBattle(true,true);
@@ -469,7 +504,7 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       var col = n.name.indexOf('Scalper')>=0 ? '#c03030' : n.name==='Clerk'||n.name==='Shopkeeper' ? '#f0c080' : n.name==='Note' ? '#e0e080' : '#c0b090';
       drawSprite(ox+n.x, oy+n.y, col, n.name!=='Note');
     }
-    drawSprite(ox+px, oy+py, '#3050b0', true);
+    drawSprite(ox+px, oy+py, (party[active]&&party[active].color)||'#3050b0', true);
 
     if(inBattle && wild){
       ctx.fillStyle='#000d'; ctx.fillRect(0,0,w,h);
@@ -478,7 +513,7 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       drawBar(90,22,60,6, Math.max(0,wild.hp), wild.max, '#e04040');
       ctx.fillText(party[active].name+' Lv'+party[active].lvl, 8, 100);
       drawBar(8,104,70,6, party[active].hp, party[active].max, '#40c040');
-      drawSprite(110, 36, '#c05040', true);
+      drawSprite(110, 36, wild.color||'#c05040', true);
       drawSprite(16, 60, '#3050b0', true);
       if(battleLog.length){
         ctx.fillText(battleLog[battleLog.length-1], 8, 130);
