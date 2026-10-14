@@ -366,7 +366,7 @@ p.hp=party[active].hp;
   function gainXP(amount){
     var p=party[active];
     p.xp += amount;
-    var evo=checkEvo(p); if(evo){ beep(720,0.15); startDialog([p.name+' evolved into '+evo+'!']); }
+    var evo=checkEvo(p); if(evo){ shake=10; beep(720,0.2); startDialog([p.name+' evolved into '+evo+'!','HP +'+(p.max-24)+' ATK +'+(p.atk-10)]); }
 if(p.xp >= p.lvl*8){ beep(600,0.12);
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
       beep(600,0.12);
@@ -439,16 +439,25 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
       if(party.length>1){ active=(active+1)%party.length; startDialog(['Lead is now '+party[active].name+'.']); }
       else startDialog(['Only one Owlie.']);
     } else if(a==='catch'){
-      if(wild.name.indexOf('Scalper')>=0){ startDialog(['Cannot catch trainers.']); return; }
+      if(wild.name.indexOf('Scalper')>=0 || wild.name==='Rival'){ startDialog(['Cannot catch trainers.']); return; }
       var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
-      shake=8; beep(500,0.1);
-if(Math.random()<chance && party.length<5){
+      var shakes = Math.random() < chance ? 3 : Math.floor(Math.random()*3);
+      var msgs = [];
+      for(var s=0; s<shakes; s++) msgs.push('...');
+      if(shakes===3 && party.length<5){
         var isShiny = Math.random()<shinyOdds;
-party.push({name:wild.name, species:wild.species, stage:wild.stage||0, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:wild.def||3, lvl:4, xp:0, moves:wild.moves||['Peck'], shiny:isShiny, held:null, color:wild.color});
-if(isShiny) startDialog(['Shiny!']);
+        party.push({name:wild.name, species:wild.species, stage:wild.stage||0, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:wild.def||3, lvl:4, xp:0, moves:wild.moves||['Peck','Gust','Tackle'], shiny:isShiny, held:null, color:wild.color});
+        if(isShiny) msgs.push('Shiny!');
+        msgs.push('Got it!');
+        unlock('firstcatch','First Catch');
         beep(700,0.15);
-        startDialog(['Got it!']); unlock('firstcatch','First Catch'); endBattle(true,true);
-      } else startDialog(['Almost! It broke free.']);
+        startDialog(msgs);
+        endBattle(true,true);
+      } else {
+        msgs.push('Broke free!');
+        beep(300,0.1);
+        startDialog(msgs);
+      }
     } else {
       var runChance = 0.5 + (p.lvl*0.02);
       if(Math.random()<runChance){ startDialog(['Got away!']); endBattle(false,false); }
@@ -511,7 +520,14 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       drawBar(8,104,70,6, party[active].hp, party[active].max, '#40c040');
       drawSprite(110, 36, wild.color||'#c05040', true, wild.stage);
       drawSprite(16, 60, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage);
-      if(pickingMove){ var ms=party[active].moves||['Peck','Gust','Tackle']; ctx.fillText('>'+ms[moveSel%ms.length], 8, 120); }
+      if(pickingMove){
+      var ms = party[active].moves || ['Peck','Gust','Tackle'];
+      var hints = {Peck:'normal', Gust:'strong', Tackle:'steady'};
+      for(var mi=0; mi<ms.length; mi++){
+        ctx.fillStyle = mi===moveSel ? '#ff0' : '#fff';
+        ctx.fillText((mi===moveSel?'> ':'  ')+ms[mi]+' ('+(hints[ms[mi]]||'')+')', 8, 108+mi*12);
+      }
+    }
 if(battleLog.length){
         ctx.fillText(battleLog[battleLog.length-1], 8, 130);
       }
