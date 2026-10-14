@@ -543,6 +543,11 @@ function updateNPCs() {
         n.x += (dx/dist)*0.8;
         n.y += (dy/dist)*0.8;
       }
+      // Start battle when close enough
+      if (dist < 18 && !inBattle && !inDialog && !isDefeated(n.id)) {
+        startBattle(n);
+        n.ai.state = "idle";
+      }
     }
   });
 }
