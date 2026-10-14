@@ -491,6 +491,18 @@ function drawEffect() {
   if (effectTimer <= 0) effectType = null;
 }
 
+
+function updateNPCs() {
+  const z = getZone();
+  z.npcs.forEach(n => {
+    if (!n.battle) return;
+    if (!n.patrol) n.patrol = { dx: 1, timer: 0, range: 40 };
+    n.patrol.timer++;
+    if (n.patrol.timer > 60) { n.patrol.timer = 0; n.patrol.dx *= -1; }
+    n.x += n.patrol.dx * 0.4;
+  });
+}
+
 function updateWalk() {
   if (keys['ArrowUp'] || keys['w'] || keys['ArrowDown'] || keys['s'] || keys['ArrowLeft'] || keys['a'] || keys['ArrowRight'] || keys['d']) {
     walkTimer++;
@@ -684,6 +696,7 @@ function openParty() {
 }
 
 function loop() { update(); draw(); updateWalk();
+  updateNPCs();
   requestAnimationFrame(loop); }
 
 document.addEventListener('keydown', e => {
