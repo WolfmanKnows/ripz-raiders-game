@@ -53,6 +53,7 @@
   <div data-m="pc">PC Box</div>
   <div data-m="rival">Rival</div>
   <div data-m="settings">Settings</div>
+  <div data-m="minigame">Card Flip</div>
   <div data-m="reset">Reset</div>
   <div data-m="close">Close</div>
 </div>
@@ -96,9 +97,9 @@
       ],
       npcs:[
         {x:2*TILE,y:2*TILE,name:'Shopkeeper',lines:['SWAP berries for packs.','Counter is open.']},
-        {x:6*TILE,y:2*TILE,name:'Kid',lines:['Grass has Owlies.','Weaken then Catch.']},
+        {x:6*TILE,y:2*TILE,name:'Kid',lines:['Bring me 3 berries for a reward.']},
         {x:8*TILE,y:4*TILE,name:'Pat',lines:['Find the note on the route.','Then beat the scalper.']},
-        {x:9*TILE,y:8*TILE,name:'Guide',lines:['North to the route.','East to the alley.']}
+        {x:9*TILE,y:8*TILE,name:'Guide',lines:['North to the route.','East to the alley.','Rumor: shinies are rare.']}
       ],
       exits:[
         {x:5,y:1,to:'route',px:5*TILE,py:8*TILE},
@@ -215,7 +216,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
   function startDialog(lines){
     dialog=lines; dialogIdx=0;
     var el=document.getElementById('dialog');
-    el.style.display='block'; el.textContent=lines[0];
+    el.style.display='block'; el.textContent=lines[0]; if(textSpeed>1) setTimeout(advanceDialog, 400);
     beep(440,0.05);
   }
   function advanceDialog(){
@@ -231,7 +232,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','items','quests','save','travel','pc','rival','settings','reset','close'];
+    var acts=['party','items','quests','save','travel','pc','rival','settings','minigame','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
@@ -257,7 +258,8 @@ else if(a==='pc'){
   startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true);
   closeMenu();
 } else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
-    else if(a==='reset'){ if(confirm('Reset all progress?')){ localStorage.removeItem('ripz_save'); location.reload(); } closeMenu(); }
+    else if(a==='minigame'){ var r=Math.random()<0.5; if(r){ berries++; startDialog(['Card flip: win! +1 berry.']); } else startDialog(['Card flip: lose.']); closeMenu(); }
+else if(a==='reset'){ if(confirm('Reset all progress?')){ localStorage.removeItem('ripz_save'); location.reload(); } closeMenu(); }
 else closeMenu();
   }
 
@@ -306,9 +308,11 @@ function interact(){
       var n=npcs[i];
       if(Math.abs(n.x-fx)<12 && Math.abs(n.y-fy)<12){
         if(n.name==='Clerk'){
-          if(berries>=2){ berries-=2; packs++; startDialog(['SWAP done. Got a pack.']); save(); }
+          var cost = badges>=1 ? 1 : 2;
+if(berries>=cost){ berries-=cost; packs++; startDialog(['SWAP done. Cost '+cost+' berries.']); save(); }
           else startDialog(['Need 2 berries.']);
-        } else if(n.name==='Note' && !flags.gotNote){
+        } else if(n.name==='Kid' && !flags.kidQuest && berries>=3){ berries-=3; packs++; flags.kidQuest=true; startDialog(['Thanks! Here is a pack.']); unlock('sidequest','Helped the Kid'); save(); }
+else if(n.name==='Note' && !flags.gotNote){
           flags.gotNote=true; notes++;
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
@@ -325,13 +329,15 @@ startBattle({name:'Scalper',hp:40,max:40,atk:12,def:5}, true);
     var tx=Math.floor(fx/TILE), ty=Math.floor(fy/TILE);
     if(tileAt(tx,ty)===4 && !flags.hiddenBerry){ flags.hiddenBerry=true; berries+=2; startDialog(['Found hidden berries!']); save(); }
 if(tileAt(tx,ty)===5 && !flags.fished){ flags.fished=true; packs++; startDialog(['Fished up a pack!']); save(); }
+if(tileAt(tx,ty)===0 && Math.random()<0.02 && !flags.groundItem){ flags.groundItem=true; berries++; startDialog(['Found a berry on the ground.']); }
 if(tileAt(tx,ty)===6 && badges>=1){ startDialog(['Cut the obstacle.']); }
 if(tileAt(tx,ty)===7 && badges>=2){ startDialog(['Moved the boulder.']); }
 if(tileAt(tx,ty)===2){
       if(berries>=1){
         berries--;
         var p=party[active];
-        p.hp=Math.min(p.max, p.hp+14);
+        for(var hi=0;hi<party.length;hi++) party[hi].hp=party[hi].max;
+p.hp=party[active].hp;
         startDialog(['Used a Berry. HP restored.']);
         beep(520,0.08);
       } else startDialog(['No Berries.']);
