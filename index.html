@@ -444,8 +444,10 @@ function drawBattle() {
     if (hitStun.timer % 2 === 0) ctx.globalAlpha = 0.25;
     ex += (hitStun.timer % 4 - 2) * 2;
   }
+  if (enemy.shiny) ctx.filter = "hue-rotate(40deg) saturate(1.4)";
   if (battleSprites[eKey]) ctx.drawImage(battleSprites[eKey], ex, ey, 64, 64);
   else if (battleSprites['packrat_battle']) ctx.drawImage(battleSprites['packrat_battle'], ex, ey, 64, 64);
+  ctx.filter = "none";
   ctx.globalAlpha = 1;
   // Enemy box
   drawGBBox(170, 12, 136, 52);
@@ -591,7 +593,9 @@ function drawStatScreen() {
   ctx.strokeRect(20, 20, 280, 248);
   ctx.fillStyle = "#fff";
   ctx.font = "12px monospace";
-  ctx.fillText(m.name, 32, 40);
+  ctx.fillStyle = m.shiny ? "#ffd700" : "#fff";
+  ctx.fillText((m.shiny ? "★ " : "") + m.name, 32, 40);
+  ctx.fillStyle = "#fff";
   ctx.font = "9px monospace";
   ctx.fillText("Lv. " + (m.lvl||1), 32, 52);
   ctx.fillText("HP:  " + m.hp + " / " + m.max, 32, 68);
@@ -725,7 +729,7 @@ function battleSelect() {
     if (catchMode) {
       const chance = 0.35 + (1 - enemy.hp/enemy.max)*0.4;
       if (Math.random() < chance && party.length < 6) {
-        party.push({ name: enemy.name, hp: enemy.max, max: enemy.max, atk: enemy.atk||7, def: enemy.def||5, spd: enemy.spd||6, lvl: 1, moves: enemy.moves || ["Peck"] });
+        party.push({ name: enemy.name, hp: enemy.max, max: enemy.max, atk: enemy.atk||7, def: enemy.def||5, spd: enemy.spd||6, lvl: 1, shiny: !!enemy.shiny, moves: enemy.moves || ["Peck"] });
         enemy.log = enemy.name + " was caught!";
         setTimeout(() => { inBattle = false; enemy = null; catchMode = false; }, 1400);
       } else {
@@ -811,7 +815,8 @@ function loop() { update(); draw(); updateWalk();
           { name: "Packrat", hp: 20, max: 20, atk: 9, def: 4, spd: 6, moves: ["Gnaw"] }
         ];
         let w = wilds[Math.floor(Math.random()*wilds.length)];
-        enemy = { ...w, mon: { name: w.name, hp: w.max, max: w.max, moves: w.moves }, log: "A wild " + w.name + " appeared!" };
+        let shiny = Math.random() < 0.08;
+        enemy = { ...w, shiny: shiny, mon: { name: w.name, hp: w.max, max: w.max, moves: w.moves, shiny: shiny }, log: (shiny ? "A shiny " : "A wild ") + w.name + " appeared!" };
         inBattle = true;
         catchMode = true;
         battleMenu = 0;
