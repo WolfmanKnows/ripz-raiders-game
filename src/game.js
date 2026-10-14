@@ -118,7 +118,7 @@
         [1,0,0,0,0,0,0,0,0,1],
         [1,1,1,1,1,1,1,1,1,1]
       ],
-      npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP berries for packs.']},{x:6*TILE,y:3*TILE,name:'Pack Bar',lines:['Sit and rip. Spend tokens or packs.']}],
+      npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP berries for packs.']},{x:6*TILE,y:3*TILE,name:'Pack Bar',lines:['Rip packs. 5 tokens to buy one.']}],
       exits:[{x:5,y:1,to:'plaza',px:5*TILE,py:8*TILE}]
     },
     forest: {
@@ -303,13 +303,25 @@ if(inBattle){ battleAction(); return; }
       var n=npcs[i];
       if(Math.abs(n.x-fx)<12 && Math.abs(n.y-fy)<12){
         if(n.name==='Pack Bar'){
-          if(packs>=1){ packs--; var pull = Math.random();
-            if(pull<0.1){ etbs++; startDialog(['Pulled an ETB!']); }
-            else if(pull<0.4){ berries+=3; startDialog(['Pulled berries.']); }
-            else { tokens+=3; startDialog(['Pulled tokens.']); }
+          if(packs>=1){
+            packs--;
+            var pull = Math.random();
+            var msg = '';
+            if(pull < 0.05){ etbs++; msg = 'JACKPOT! ETB!'; }
+            else if(pull < 0.15){ berries += 5; msg = 'Big berry pull! +5'; }
+            else if(pull < 0.35){ tokens += 6; msg = 'Token pull! +6'; }
+            else if(pull < 0.55){ berries += 2; tokens += 2; msg = 'Mixed pull. +2 berries, +2 tokens'; }
+            else { berries += 1; msg = 'Common pull. +1 berry'; }
+            startDialog([msg, 'Packs left: '+packs]);
             save();
-          } else if(tokens>=8){ tokens-=8; packs++; startDialog(['Bought a pack with tokens. Rip it?']); }
-          else startDialog(['Need a pack or 8 tokens.']);
+          } else if(tokens >= 5){
+            tokens -= 5;
+            packs++;
+            startDialog(['Bought a pack for 5 tokens.','Talk again to rip it.']);
+            save();
+          } else {
+            startDialog(['Need a pack or 5 tokens.','You have '+tokens+' tokens.']);
+          }
           return;
         }
         if(n.name==='Clerk'){
