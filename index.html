@@ -602,20 +602,24 @@ function openSealed() {
 
 function doOpen(item) {
   let results = [];
+  let rarity = "";
   if (item === "ETB" && etbs > 0) {
     etbs--;
-    // ETB rewards: guaranteed purify + chance of extra
     purifyPotions++;
     results.push("You opened the ETB!");
-    results.push("Got a Purify Potion.");
-    if (Math.random() < 0.3) { moveTutorItem = true; results.push("Also found a Move Scroll!"); }
+    let r = Math.random();
+    if (r < 0.5) { rarity = "Uncommon"; }
+    else if (r < 0.85) { rarity = "Rare"; }
+    else { rarity = "Ultra Rare"; moveTutorItem = true; results.push("Found a Move Scroll!"); }
+    results.push("Purify Potion (" + rarity + ")");
   } else if (packs > 0) {
     packs--;
-    // Pack rewards
+    results.push("You ripped the pack!");
     let r = Math.random();
-    if (r < 0.6) { berries++; results = ["You ripped the pack!", "Got a Nest Berry."]; }
-    else if (r < 0.85) { purifyPotions++; results = ["You ripped the pack!", "Got a Purify Potion!"]; }
-    else { moveTutorItem = true; results = ["You ripped the pack!", "Got a Move Scroll!"]; }
+    if (r < 0.55) { berries++; rarity = "Common"; results.push("Nest Berry (" + rarity + ")"); }
+    else if (r < 0.8) { purifyPotions++; rarity = "Uncommon"; results.push("Purify Potion (" + rarity + ")"); }
+    else if (r < 0.95) { purifyPotions++; rarity = "Rare"; results.push("Purify Potion (" + rarity + ")"); }
+    else { moveTutorItem = true; rarity = "Ultra Rare"; results.push("Move Scroll (" + rarity + ")"); }
   }
   startDialog(results, null);
   window.pendingOpen = null;
