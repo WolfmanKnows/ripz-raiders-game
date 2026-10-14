@@ -73,7 +73,7 @@
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
   var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [];
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0;
-  var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0;
+  var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
   var zones = {
     plaza: {
@@ -155,7 +155,7 @@
   };
 
   function getSave(){
-    return {px:px,py:py,zone:zone,party:party,berries:berries,etbs:etbs,packs:packs,flags:flags,badges:badges,score:score,wins:wins,notes:notes,mute:mute,active:active};
+    return {px:px,py:py,zone:zone,party:party,berries:berries,etbs:etbs,packs:packs,flags:flags,badges:badges,score:score,wins:wins,notes:notes,mute:mute,active:active,tokens:tokens,achievements:achievements,seen:seen,volume:volume,textSpeed:textSpeed};
   }
   function loadSave(d){
     if(!d) return;
@@ -173,9 +173,17 @@
     if(typeof d.notes==='number') notes=d.notes;
     if(typeof d.mute==='boolean') mute=d.mute;
     if(typeof d.active==='number') active=d.active;
+if(typeof d.tokens==='number') tokens=d.tokens;
+if(d.achievements) achievements=d.achievements;
+if(d.seen) seen=d.seen;
+if(typeof d.volume==='number') volume=d.volume;
+if(typeof d.textSpeed==='number') textSpeed=d.textSpeed;
   }
   try{ var sv=localStorage.getItem('ripz_save'); if(sv) loadSave(JSON.parse(sv)); }catch(e){}
-  function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave())); }catch(e){} }
+  function unlock(id, msg){
+  if(achievements.indexOf(id)<0){ achievements.push(id); startDialog(['Achievement: '+msg]); beep(800,0.1); }
+}
+function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave())); }catch(e){} }
 
   function beep(freq, dur){
     if(mute) return;
@@ -220,7 +228,7 @@
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
-      lines.push('Tap again to cycle lead.');
+      lines.push('Seen: '+Object.keys(seen).length); lines.push('Tap again to cycle lead.');
       startDialog(lines); closeMenu();
     } else if(a==='items'){
       startDialog(['Berries: '+berries+' (heal)','Packs: '+packs+' (open for bonus)','ETBs: '+etbs]);
@@ -231,8 +239,8 @@
       q.push(flags.beatScalper ? 'Scalper: beaten' : 'Scalper: not yet');
       q.push(flags.beatLead ? 'Lead: beaten' : 'Lead: in alley');
       startDialog(q); closeMenu();
-    } else if(a==='save'){ save(); startDialog(['Saved.']); closeMenu(); }
-else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m']); closeMenu(); }
+    } else if(a==='save'){ save(); startDialog(['Saved.','Export: copy from console or use getSave()']); closeMenu(); }
+else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length]); closeMenu(); }
     else closeMenu();
   }
 
@@ -317,6 +325,7 @@ if(p.xp >= p.lvl*8){
 
   function startBattle(w, isTrainer){
     inBattle=true; wild=w||{name:'Wild Owlie',hp:18,max:18,atk:7,def:3}; battleSel=0; battleLog=[];
+seen[wild.name]=true;
     document.getElementById('battleMenu').style.display='block';
     updateBattle();
     startDialog([(isTrainer?'Trainer challenge: ':'A wild ')+wild.name+'!']);
@@ -328,8 +337,8 @@ if(p.xp >= p.lvl*8){
   function endBattle(win, caught){
     inBattle=false; wild=null;
     document.getElementById('battleMenu').style.display='none';
-    if(win){
-      wins++;
+    if(win){ tokens+=5;
+      wins++; if(wins===1) unlock('firstwin','First Victory');
       score += caught ? 20 : 12;
       berries++;
       if(Math.random()<0.35) packs++;
@@ -349,7 +358,7 @@ if(p.xp >= p.lvl*8){
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg);
       if(wild.hp<=0){
-        if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; }
+        if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); }
         if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; }
         startDialog(['You won!']); endBattle(true,false); return;
       }
@@ -357,6 +366,7 @@ if(p.xp >= p.lvl*8){
       p.hp -= back;
       battleLog.push('Took '+back);
       if(p.hp<=0){ p.hp=1; startDialog(['Your Owlie is tired.']); endBattle(false,false); return; }
+if(p.hp < p.max*0.3) beep(200,0.1);
       startDialog(['Hit for '+dmg+'!','Enemy hit for '+back+'.']);
     } else if(a==='item'){
       if(berries>=1 && p.hp<p.max){ berries--; p.hp=Math.min(p.max, p.hp+12); startDialog(['Berry used.']); beep(500,0.06); }
@@ -373,7 +383,7 @@ if(p.xp >= p.lvl*8){
 party.push({name:wild.name, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:3, lvl:4, xp:0, moves:['Peck'], shiny:isShiny, held:null});
 if(isShiny) startDialog(['Shiny!']);
         beep(700,0.15);
-        startDialog(['Got it!']); endBattle(true,true);
+        startDialog(['Got it!']); unlock('firstcatch','First Catch'); endBattle(true,true);
       } else startDialog(['Almost! It broke free.']);
     } else {
       var runChance = 0.5 + (p.lvl*0.02);
@@ -402,7 +412,8 @@ if(isShiny) startDialog(['Shiny!']);
     var w=canvas.width, h=canvas.height;
     ctx.save();
     if(shake>0){ ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
-    ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=dayPhase?'#0a0a20':'#000'; ctx.fillRect(0,0,w,h);
+if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     var zm=z();
     var ox=Math.floor((w - zm.w*TILE)/2);
     var oy=Math.floor((h - zm.h*TILE)/2);
@@ -518,7 +529,7 @@ if(isShiny) startDialog(['Shiny!']);
     (function(el,idx){ el.addEventListener('click', function(){ battleSel=idx; updateBattle(); battleAction(); }); })(bItems[k],k);
   }
 
-  setInterval(function(){ playTime++; dayPhase = Math.floor(playTime/120)%2; }, 1000);
+  setInterval(function(){ playTime++; dayPhase = Math.floor(playTime/120)%2; if(playTime%30===0) weather = weather?0:1; }, 1000);
 setInterval(function(){
     if(dialog||menuOpen||inBattle) return;
     var tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
