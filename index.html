@@ -38,18 +38,24 @@ const ctx = c.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
 
+
 const tileImgs = {};
 function loadTile(name, b64) {
   const img = new Image();
   img.src = 'data:image/png;base64,' + b64;
   tileImgs[name] = img;
 }
-loadTile('grass', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAfElEQVR4nJ2SIQ7FMAxDPcnoI+OiHGmn++crGjYqHojUTSNrRqKoceuXNNv+36OFbUkzelg/3U8k9aNHC6bawwBmLfNUzDuZ81XxeIt33xU3lng8zBIPAJZ4JLHEA4A570Wea0rrv3H1sNg9Szz96CzxRAuWeGyzxPNlW09geFIHlbD0WAAAAABJRU5ErkJggg==');
-loadTile('path', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAJklEQVR4nGPcsaJCQEDgw4cPRJJMJKn+8OEDE0mqR20YtWEgbQAAYQd/N/0CzBcAAAAASUVORK5CYII=');
-loadTile('tree', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAfUlEQVR4nGNgoBAwYhM0aDD4j038QsMFDPVMxGrGJcdESAEhQ5hwSQgoCBBlCBMuzR8efCDKEIwwYGBgYPjw4AMKjQ9gNYAUMEgMwJZACAGYHiZ0AVI0MzBgScqw6EGPAViUoluEEQb4XIJNDqdihQQFlMT1YMEDrGopjgUApTcz2jzK6p0AAAAASUVORK5CYII=');
-loadTile('tall', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAALElEQVR4nGMMWBDAQApgIkn1sNbw4MGDBw8eUNUGPEaiyQ6ZUBpQDYykJm8A4GMSX0+W0MwAAAAASUVORK5CYII=');
-loadTile('player', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAa0lEQVR4nGNgGAWMuCT+bzv4H0Whlz1WtUy49BMpxsCCLtDR0YFVYUdHBwMDA8P/iooKFJdgGAADnZeO45JCAShe+J+d/b/88WOcio+52jD4nT2C4kJcYUA0GHgDMOIWVyzAAHosUOyCgQcA53YcBD3y868AAAAASUVORK5CYII=');
-
+loadTile('grass', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAT0lEQVR4nGMs2JDw4cMHAQEBIkkmklQLCAgwkaSaLjaw4JH78OEDAwMDbWyAmG1gYEBVPyC7GKvZFNuAy1S0sKI4lDDDHs1mitMSnvCBkAAFFYJ5Ma5mcAAAAABJRU5ErkJggg==');
+loadTile('path', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAbElEQVR4nOWRwQ3AIAwDKfIAHoExO1JH6DiM4BH6sJQHqaC8+0FGZ4jlHPd1ttYkkZRkYU2y9z5Q+C6plELSZ/gyhV8vfUGrlSeGL4Jlivl/meJ7etP6OneSCoNvOQ1bnZLEVqeS6lanf930Aw1uS723SnJcAAAAAElFTkSuQmCC');
+loadTile('tree', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApUlEQVR4nKVSuRHDMAxjWKXkCBpBI3gUj5BRMoJH8QgaQSOwdGc35p34SErOqHggAeFIATzEKyLzJ58RX77FzTtCxJRI8Vw5NMGRmIiA6K5vzqbDkVgwMsGZeGaCbvJPhAbM/BPnDGTTVqDqZgagOWO7GHvCSCznREtEr/TEKoFNkos2KZmcWCWI3BO9u71uAsG6pFNMKh+w7TWcnf6Dysew//gjXQ5iT5jujFjUAAAAAElFTkSuQmCC');
+loadTile('tall', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAXElEQVR4nGN0mGAgICDw4cMHIkkmklR/+PCBiSTVdLGBBVP0w4MPHxg+KBgoYBXHYgMDAwMDAwMucagfkFVAJHCJw2x48OHDgw9YbMAQZ8JqKh42E6ap+Nkj0gYAcDYggQ9xLzwAAAAASUVORK5CYII=');
+loadTile('wall', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAQklEQVR4nGOc0ZDw48cPBgzAwcGBVZyFgYFBQkICU+LDhw9YxZkwhfADkjWwMDAwvHjxAlOCg4MDq/ioH4gBI9IPAL/sJabfaLNEAAAAAElFTkSuQmCC');
+loadTile('player', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAj0lEQVR4nN2RsQ2DQAxFHxFr0NwKaWmzyXUs4uxwE7ikuP6ajOFVTIdC4C5IFJHyK8vys79t+G+pqquqt2puLfgoPj0ZcM/FPRcHqk6qDjyXw/hrAxFxM9sVmhkisnPRbaZOkwM8hwGAEMIKA7weIwDzfVy5vurtDWypeoOzutyg+0zEGJs/TyltmN+vcFkLkss50zgEjQ0AAAAASUVORK5CYII=');
+loadTile('door', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAO0lEQVR4nGNcMaGAgRTARJJqcjSwIHN2bNiAVZFHQAD5Ngw9DZlJ7KRpmD7vJ42dNCQ0oKQl5DSDCwAAbeYItFJPxscAAAAASUVORK5CYII=');
+loadTile('npc_shop', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAYElEQVR4nGNgGN7g+QHX/88PuP7Hp4YJn2ZsbKIMeH7A9b+kw244X9JhN05D8LkAK5ugAScXqf9/9OgRhsJHjx4xnFykjuEKnC5ANgSbgTDAglOGgEaCLiAWDAMDBh4AAF7xKfmi8EKGAAAAAElFTkSuQmCC');
+loadTile('npc_pat', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAXUlEQVR4nN2Oyw3AMAhDSZXRmITBGI5LsoV7alUpfHKrFJ+MsJ9MdLYgAoggy1xZ2fNbAIigqb53Uw0h2QLXl4DBjGm2BKcZDeZlRbjgC/GAj3r4KYrlgl0dAPhfN0hcKNu6zvB+AAAAAElFTkSuQmCC');
+loadTile('npc_scalper', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVR4nN2OwQnAMAwDTelGnkSTaict4r5aCnHs/ALRS8bSIbOzBSAARJW5qnLmlwAAguR3k5xCqgWpbwHuHpKGoCRz92HFdMEfkgFf3dNPU2wXrOoAwH49lg4iMcqrzmQAAAAASUVORK5CYII=');
+loadTile('npc_kid', 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAX0lEQVR4nGNgGN5g2bJX/5cte/UfnxomfJqxsYkyYNmyV/+josTg/KgoMZyG4HMBVjZBAzo6zvx/9OgRhsJHjx4xdHScwXAFThcgG4LNQBhgwSlDQCNBFxALhoEBAw8Ag4ssSecprUwAAAAASUVORK5CYII=');
 const TILE = 16;
 const VIEW_W = 20, VIEW_H = 18;
 
@@ -251,22 +257,16 @@ function drawHPBar(x, y, w, hp, max) {
 // Improved tile drawing matching reference style
 function drawTile(x, y, t) {
   const sx = x*TILE - camX, sy = y*TILE - camY;
-  let img = null;
-  if (t === 0 && tileImgs.grass && tileImgs.grass.complete) img = tileImgs.grass;
-  else if (t === 1 && tileImgs.path && tileImgs.path.complete) img = tileImgs.path;
-  else if (t === 2 && tileImgs.tree && tileImgs.tree.complete) img = tileImgs.tree;
-  else if (t === 5 && tileImgs.tall && tileImgs.tall.complete) img = tileImgs.tall;
-  if (img) {
-    ctx.drawImage(img, sx, sy, TILE, TILE);
+  const map = {0:'grass',1:'path',2:'tree',3:'wall',4:'door',5:'tall'};
+  const key = map[t];
+  if (key && tileImgs[key] && tileImgs[key].complete) {
+    ctx.drawImage(tileImgs[key], sx, sy, TILE, TILE);
     return;
   }
-  // fallback
-  if (t === 0) { ctx.fillStyle = (x+y)%2===0 ? '#70b070' : '#60a060'; ctx.fillRect(sx,sy,TILE,TILE); }
-  else if (t === 1) { ctx.fillStyle = '#c8b888'; ctx.fillRect(sx,sy,TILE,TILE); }
-  else if (t === 2) { ctx.fillStyle = '#308030'; ctx.beginPath(); ctx.arc(sx+8,sy+8,7,0,Math.PI*2); ctx.fill(); }
-  else if (t === 3) { ctx.fillStyle = '#a09070'; ctx.fillRect(sx,sy,TILE,TILE); }
-  else if (t === 4) { ctx.fillStyle = '#604020'; ctx.fillRect(sx+4,sy+4,8,12); }
-  else if (t === 5) { ctx.fillStyle = '#50a050'; ctx.fillRect(sx,sy,TILE,TILE); }
+  // fallback colors
+  const cols = {0:'#70b070',1:'#c8b888',2:'#308030',3:'#a09070',4:'#604020',5:'#50a050'};
+  ctx.fillStyle = cols[t] || '#70b070';
+  ctx.fillRect(sx, sy, TILE, TILE);
 }
 
 function drawWorld() {
@@ -277,14 +277,15 @@ function drawWorld() {
   z.npcs.forEach(n => {
     if (n.battle && isDefeated(n.id)) return;
     const nx = n.x - camX, ny = n.y - camY;
-    // Simple character sprite
-    ctx.fillStyle = n.name === 'Pat' ? '#e74' : (n.battle ? '#333' : '#c9a227');
-    ctx.fillRect(nx+4, ny+6, 8, 8);
-    ctx.fillStyle = '#ffb6c1';
-    ctx.fillRect(nx+6, ny+4, 4, 3);
-    if (n.battle) {
-      ctx.fillStyle = '#c9a227';
-      ctx.fillRect(nx+5, ny+12, 6, 3);
+    let key = 'npc_shop';
+    if (n.name === 'Pat') key = 'npc_pat';
+    else if (n.battle) key = 'npc_scalper';
+    else if (n.name === 'Kid') key = 'npc_kid';
+    if (tileImgs[key] && tileImgs[key].complete) {
+      ctx.drawImage(tileImgs[key], nx, ny, TILE, TILE);
+    } else {
+      ctx.fillStyle = n.name === 'Pat' ? '#e74' : (n.battle ? '#333' : '#c9a227');
+      ctx.fillRect(nx+4, ny+6, 8, 8);
     }
   });
   // Player
