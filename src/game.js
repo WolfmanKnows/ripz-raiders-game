@@ -75,7 +75,7 @@
         [1,1,1,1,1,1,1,1,1,1,1,1]
       ],
       npcs:[
-        {x:2*TILE,y:2*TILE,name:'Shopkeeper',lines:['SWAP berries for packs.','Counter is open.']},
+        {x:2*TILE,y:2*TILE,name:'Shopkeeper',lines:['ohhTCG shop. Sit at the Pack Bar to rip.']},
         {x:6*TILE,y:2*TILE,name:'Kid',lines:['Bring me 3 berries for a reward.']},
         {x:8*TILE,y:4*TILE,name:'Pat',lines:['Find the note on the route.','Then beat the scalper.']},
         {x:9*TILE,y:8*TILE,name:'Guide',lines:['North to the route.','East to the alley.','Rumor: shinies are rare.']}
@@ -118,7 +118,7 @@
         [1,0,0,0,0,0,0,0,0,1],
         [1,1,1,1,1,1,1,1,1,1]
       ],
-      npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP 2 berries for a pack.']}],
+      npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP berries for packs.']},{x:6*TILE,y:3*TILE,name:'Pack Bar',lines:['Sit and rip. Spend tokens or packs.']}],
       exits:[{x:5,y:1,to:'plaza',px:5*TILE,py:8*TILE}]
     },
     forest: {
@@ -302,6 +302,16 @@ if(inBattle){ battleAction(); return; }
     for(var i=0;i<npcs.length;i++){
       var n=npcs[i];
       if(Math.abs(n.x-fx)<12 && Math.abs(n.y-fy)<12){
+        if(n.name==='Pack Bar'){
+          if(packs>=1){ packs--; var pull = Math.random();
+            if(pull<0.1){ etbs++; startDialog(['Pulled an ETB!']); }
+            else if(pull<0.4){ berries+=3; startDialog(['Pulled berries.']); }
+            else { tokens+=3; startDialog(['Pulled tokens.']); }
+            save();
+          } else if(tokens>=8){ tokens-=8; packs++; startDialog(['Bought a pack with tokens. Rip it?']); }
+          else startDialog(['Need a pack or 8 tokens.']);
+          return;
+        }
         if(n.name==='Clerk'){
           if(n.name==='Clerk' && flags.shopExtra){ if(berries>=3){ berries-=3; packs++; etbs++; startDialog(['Bought pack + ETB.']); save(); return; } }
 var cost = badges>=1 ? 1 : 2;
