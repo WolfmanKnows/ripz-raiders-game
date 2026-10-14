@@ -556,7 +556,9 @@ function battleSelect() {
 
 function openParty() {
   const names = party.map((p,i) => (i+1)+'. '+p.name+' '+p.hp+'/'+p.max).join(' | ');
-  startDialog(["Party: "+names, "Berries: "+berries+"  ETBs: "+etbs+"  Packs: "+packs+"  Move Scroll: "+(moveTutorItem?'Yes':'No')], null);
+  let msg = ["Party: "+names, "Berries: "+berries+"  ETBs: "+etbs+"  Packs: "+packs+"  Move Scroll: "+(moveTutorItem?'Yes':'No')];
+  if (etbs > 0 || packs > 0) msg.push("Press O to open a sealed item.");
+  startDialog(msg, null);
 }
 
 function loop() { update(); draw(); requestAnimationFrame(loop); }
@@ -568,6 +570,7 @@ document.addEventListener('keydown', e => {
     else interact();
   }
   if (e.key === 'm' || e.key === 'M') openParty();
+  if (e.key === 'o' || e.key === 'O') openSealed();
   if (inBattle && (e.key === 'ArrowUp' || e.key === 'w')) battleMenu = Math.max(0, battleMenu-1);
   if (inBattle && (e.key === 'ArrowDown' || e.key === 's')) battleMenu = Math.min(2, battleMenu+1);
 });
@@ -578,6 +581,64 @@ if ('ontouchstart' in window) document.getElementById('touch').style.display = '
 
 updateObj();
 loop();
+
+function openSealed() {
+  if (inBattle || inDialog) return;
+  if (etbs <= 0 && packs <= 0) { startDialog(["You have nothing sealed."], null); return; }
+  let item = etbs > 0 ? "ETB" : "pack";
+  startDialog([
+    "🎵 Should I open it or keep it sealed?!? 🎵",
+    "Open the " + item + "?"
+  ], () => {
+    startDialog(["Press 1 to Open", "Press 2 to Keep Sealed"], null);
+    window.pendingOpen = item;
+  });
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!window.pendingOpen) return;
+  if (e.key === '1') {
+    let item = window.pendingOpen;
+    if (item === "ETB" && etbs > 0) {
+      etbs--;
+      purifyPotions++;
+      startDialog(["You opened the ETB!", "Got a Purify Potion."], null);
+    } else if (packs > 0) {
+      packs--;
+      berries++;
+      startDialog(["You ripped the pack!", "Got a Nest Berry."], null);
+    }
+    window.pendingOpen = null;
+  } else if (e.key === '2') {
+    startDialog(["Kept it sealed. Pat Flynn would be proud."], null);
+    window.pendingOpen = null;
+  }
+});
+
+// Hook into advanceDialog for the choice
+const oldAdvance = advanceDialog;
+advanceDialog = function() {
+  if (dialogChoice && window.pendingOpen) {
+    // For simplicity, first press = open, second = keep (or detect)
+    if (dialogIndex === 0) {
+      // Open
+      if (window.pendingOpen === "ETB" && etbs > 0) {
+        etbs--;
+        purifyPotions++;
+        startDialog(["You opened the ETB!", "Got a Purify Potion."], null);
+      } else if (packs > 0) {
+        packs--;
+        berries++;
+        startDialog(["You ripped the pack!", "Got a Nest Berry."], null);
+      }
+      window.pendingOpen = null;
+      dialogChoice = false;
+      return;
+    }
+  }
+  oldAdvance();
+};
+
 </script>
 </body>
 </html>
