@@ -693,10 +693,12 @@ function battleSelect() {
     if (catchMode) {
       const chance = 0.35 + (1 - enemy.hp/enemy.max)*0.4;
       if (Math.random() < chance && party.length < 6) {
-        party.push({...enemy.mon, hp: enemy.max, max: enemy.max});
+        party.push({ name: enemy.name, hp: enemy.max, max: enemy.max, moves: enemy.moves || ["Peck"] });
         enemy.log = enemy.name + " was caught!";
-        setTimeout(() => { inBattle = false; enemy = null; catchMode = false; }, 1200);
-      } else enemy.log = "The ball missed!";
+        setTimeout(() => { inBattle = false; enemy = null; catchMode = false; }, 1400);
+      } else {
+        enemy.log = "The ball shook... and missed!";
+      }
     } else {
       const dmg = 7 + Math.floor(Math.random()*6);
       enemy.hp -= dmg;
@@ -758,7 +760,7 @@ function loop() { update(); draw(); updateWalk();
           { name: "Packrat", hp: 20, max: 20, moves: ["Gnaw"] }
         ];
         let w = wilds[Math.floor(Math.random()*wilds.length)];
-        enemy = { ...w, log: "A wild " + w.name + " appeared!" };
+        enemy = { ...w, mon: { name: w.name, hp: w.max, max: w.max, moves: w.moves }, log: "A wild " + w.name + " appeared!" };
         inBattle = true;
         catchMode = true;
         battleMenu = 0;
