@@ -500,9 +500,15 @@ function updateWalk() {
     else if (keys['ArrowLeft'] || keys['a']) facing = 3;
     else if (keys['ArrowRight'] || keys['d']) facing = 1;
   }
-  // NPCs idle cycle
+  // NPCs: slow idle, faster "run" when player is near
+  let near = false;
+  getZone().npcs.forEach(n => {
+    let dx = n.x - px, dy = n.y - py;
+    if (dx*dx + dy*dy < 80*80) near = true;
+  });
   npcWalkTimer++;
-  if (npcWalkTimer > 20) { npcWalkTimer = 0; npcWalkFrame = (npcWalkFrame + 1) % 2; }
+  let speed = near ? 6 : 20;
+  if (npcWalkTimer > speed) { npcWalkTimer = 0; npcWalkFrame = (npcWalkFrame + 1) % 4; }
 }
 function draw() {
   ctx.clearRect(0, 0, c.width, c.height);
