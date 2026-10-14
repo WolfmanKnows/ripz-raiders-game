@@ -526,12 +526,17 @@ function battleSelect() {
       enemy.hp -= dmg;
       enemy.log = party[0].name + " used " + (party[0].moves[0]||"Peck") + "! (" + dmg + ")";
       if (enemy.hp <= 0) {
-        enemy.log = enemy.boss ? "Lead scalper defeated!" : "You win!";
+        // Drop rates: 15% ETB, 40% pack, 45% nothing
+        let r = Math.random();
+        let drop = "";
+        if (r < 0.15) { etbs++; drop = " Dropped an ETB!"; }
+        else if (r < 0.55) { packs++; drop = " Dropped a pack!"; }
+        enemy.log = (enemy.boss ? "Lead scalper defeated!" : "You win!") + drop;
         markDefeated(enemy.id);
         if (enemy.id === 'scalper1') setFlag('beat1');
         if (enemy.id === 'scalper2') setFlag('beat2');
         if (enemy.boss) setFlag('beatBoss');
-        setTimeout(() => { inBattle = false; enemy = null; }, 1200);
+        setTimeout(() => { inBattle = false; enemy = null; }, 1400);
         return;
       }
       setTimeout(() => {
