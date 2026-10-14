@@ -693,14 +693,16 @@ function battleSelect() {
     if (catchMode) {
       const chance = 0.35 + (1 - enemy.hp/enemy.max)*0.4;
       if (Math.random() < chance && party.length < 6) {
-        party.push({ name: enemy.name, hp: enemy.max, max: enemy.max, moves: enemy.moves || ["Peck"] });
+        party.push({ name: enemy.name, hp: enemy.max, max: enemy.max, atk: enemy.atk||7, def: enemy.def||5, spd: enemy.spd||6, moves: enemy.moves || ["Peck"] });
         enemy.log = enemy.name + " was caught!";
         setTimeout(() => { inBattle = false; enemy = null; catchMode = false; }, 1400);
       } else {
         enemy.log = "The ball shook... and missed!";
       }
     } else {
-      const dmg = 7 + Math.floor(Math.random()*6);
+      const atk = party[0].atk || 7;
+      const def = enemy.def || 5;
+      const dmg = Math.max(1, Math.floor((atk * 2 - def) / 2) + Math.floor(Math.random()*4));
       enemy.hp -= dmg;
       battleAnim = { active: true, side: "player", timer: 12 };
       hitStun = { active: true, side: "enemy", timer: 10 };
@@ -755,9 +757,9 @@ function loop() { update(); draw(); updateWalk();
     if (tx >= 0 && ty >= 0 && tx < z.w && ty < z.h && z.map[ty][tx] === 4) {
       if (Math.random() < 0.04) {
         let wilds = [
-          { name: "Hootling", hp: 18, max: 18, moves: ["Peck"] },
-          { name: "Nestling", hp: 16, max: 16, moves: ["Fluff"] },
-          { name: "Packrat", hp: 20, max: 20, moves: ["Gnaw"] }
+          { name: "Hootling", hp: 18, max: 18, atk: 8, def: 5, spd: 7, moves: ["Peck"] },
+          { name: "Nestling", hp: 16, max: 16, atk: 6, def: 6, spd: 5, moves: ["Fluff"] },
+          { name: "Packrat", hp: 20, max: 20, atk: 9, def: 4, spd: 6, moves: ["Gnaw"] }
         ];
         let w = wilds[Math.floor(Math.random()*wilds.length)];
         enemy = { ...w, mon: { name: w.name, hp: w.max, max: w.max, moves: w.moves }, log: "A wild " + w.name + " appeared!" };
