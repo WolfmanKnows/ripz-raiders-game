@@ -53,6 +53,7 @@
   <div data-m="pc">PC Box</div>
   <div data-m="rival">Rival</div>
   <div data-m="settings">Settings</div>
+  <div data-m="reset">Reset</div>
   <div data-m="close">Close</div>
 </div>
 <div id="battleMenu">
@@ -71,7 +72,7 @@
 
   var TILE = 16, scale = 1;
   var px = 4*TILE, py = 4*TILE, facing = 0, frame = 0, zone = 'plaza';
-  var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust'], shiny:false, held:null}];
+  var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust'], shiny:false, held:'Berry'}];
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
   var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [];
@@ -230,7 +231,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','items','quests','save','travel','pc','rival','settings','close'];
+    var acts=['party','items','quests','save','travel','pc','rival','settings','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
@@ -255,8 +256,9 @@ else if(a==='pc'){
 } else if(a==='rival'){
   startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true);
   closeMenu();
-} else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length]); closeMenu(); }
-    else closeMenu();
+} else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
+    else if(a==='reset'){ if(confirm('Reset all progress?')){ localStorage.removeItem('ripz_save'); location.reload(); } closeMenu(); }
+else closeMenu();
   }
 
   function z(){ return zones[zone]; }
@@ -310,7 +312,9 @@ function interact(){
           flags.gotNote=true; notes++;
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
-        } else if(n.name==='Scalper' && !flags.beatScalper){
+        } else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
+startBattle({name:'Scalper',hp:40,max:40,atk:12,def:5}, true);
+} else if(n.name==='Scalper' && !flags.beatScalper){
           startBattle({name:'Scalper',hp:30,max:30,atk:9,def:4}, true);
         } else if(n.name==='Lead Scalper' && !flags.beatLead){
           startBattle({name:'Lead Scalper',hp:40,max:40,atk:11,def:5}, true);
@@ -320,6 +324,9 @@ function interact(){
     }
     var tx=Math.floor(fx/TILE), ty=Math.floor(fy/TILE);
     if(tileAt(tx,ty)===4 && !flags.hiddenBerry){ flags.hiddenBerry=true; berries+=2; startDialog(['Found hidden berries!']); save(); }
+if(tileAt(tx,ty)===5 && !flags.fished){ flags.fished=true; packs++; startDialog(['Fished up a pack!']); save(); }
+if(tileAt(tx,ty)===6 && badges>=1){ startDialog(['Cut the obstacle.']); }
+if(tileAt(tx,ty)===7 && badges>=2){ startDialog(['Moved the boulder.']); }
 if(tileAt(tx,ty)===2){
       if(berries>=1){
         berries--;
@@ -373,13 +380,15 @@ seen[wild.name]=true;
     var a=acts[battleSel];
     var p=party[active];
     if(a==='fight'){
-      var dmg = p.atk + (Math.random()<0.15 ? 4 : 0);
+      var move = (p.moves && p.moves[0]) || 'Peck';
+var dmg = p.atk + (move==='Gust'?2:0) + (Math.random()<0.15 ? 4 : 0);
+battleLog.push(move+'!');
 if(Math.random()<0.1){ dmg+=2; battleLog.push('Burn!'); }
       wild.hp -= dmg;
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg); shake=4;
       if(wild.hp<=0){
-        if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); }
+        if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
         if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; if(!ngPlus){ ngPlus=true; startDialog(['New Game+ unlocked!']); } }
 if(wild.name==='Rival'){ rivalWins++; unlock('rival','Beat Rival'); }
         startDialog(['You won!']); endBattle(true,false); return;
@@ -388,7 +397,7 @@ if(wild.name==='Rival'){ rivalWins++; unlock('rival','Beat Rival'); }
       p.hp -= back;
       battleLog.push('Took '+back);
       if(p.hp<=0){ p.hp=1; startDialog(['Your Owlie is tired.']); endBattle(false,false); return; }
-if(p.hp < p.max*0.3) beep(200,0.1);
+if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p.hp+10); p.held=null; battleLog.push('Held Berry!'); } }
       startDialog(['Hit for '+dmg+'!','Enemy hit for '+back+'.']);
     } else if(a==='item'){
       if(berries>=1 && p.hp<p.max){ berries--; p.hp=Math.min(p.max, p.hp+12); startDialog(['Berry used.']); beep(500,0.06); }
