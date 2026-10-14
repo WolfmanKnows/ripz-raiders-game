@@ -372,9 +372,15 @@ function drawWorld() {
     if (n.name === 'Pat') key = 'npc_pat';
     else if (n.battle) key = 'npc_scalper';
     else if (n.name === 'Kid') key = 'npc_kid';
-    if (tileImgs[key] && tileImgs[key].complete) {
+    let drawn = false;
+    if (n.battle && walkSprites['scalper_walk_' + npcWalkFrame]) {
+      ctx.drawImage(walkSprites['scalper_walk_' + npcWalkFrame], nx, ny, TILE, TILE);
+      drawn = true;
+    } else if (tileImgs[key] && tileImgs[key].complete) {
       ctx.drawImage(tileImgs[key], nx, ny, TILE, TILE);
-    } else {
+      drawn = true;
+    }
+    if (!drawn) {
       ctx.fillStyle = n.name === 'Pat' ? '#e74' : (n.battle ? '#333' : '#c9a227');
       ctx.fillRect(nx+4, ny+6, 8, 8);
     }
@@ -494,6 +500,9 @@ function updateWalk() {
     else if (keys['ArrowLeft'] || keys['a']) facing = 3;
     else if (keys['ArrowRight'] || keys['d']) facing = 1;
   }
+  // NPCs idle cycle
+  npcWalkTimer++;
+  if (npcWalkTimer > 20) { npcWalkTimer = 0; npcWalkFrame = (npcWalkFrame + 1) % 2; }
 }
 function draw() {
   ctx.clearRect(0, 0, c.width, c.height);
