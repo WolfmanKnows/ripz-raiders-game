@@ -49,6 +49,7 @@
   <div data-m="items">Items</div>
   <div data-m="quests">Quests</div>
   <div data-m="save">Save</div>
+  <div data-m="settings">Settings</div>
   <div data-m="close">Close</div>
 </div>
 <div id="battleMenu">
@@ -67,12 +68,12 @@
 
   var TILE = 16, scale = 1;
   var px = 4*TILE, py = 4*TILE, facing = 0, frame = 0, zone = 'plaza';
-  var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust']}];
+  var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust'], shiny:false, held:null}];
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
   var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [];
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0;
-  var wins = 0, notes = 0;
+  var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0;
 
   var zones = {
     plaza: {
@@ -215,7 +216,7 @@
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','items','quests','save','close'];
+    var acts=['party','items','quests','save','settings','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
@@ -231,6 +232,7 @@
       q.push(flags.beatLead ? 'Lead: beaten' : 'Lead: in alley');
       startDialog(q); closeMenu();
     } else if(a==='save'){ save(); startDialog(['Saved.']); closeMenu(); }
+else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m']); closeMenu(); }
     else closeMenu();
   }
 
@@ -246,7 +248,7 @@
     if(dialog||menuOpen||inBattle||fade>0) return;
     var nx=px+dx, ny=py+dy;
     var tx=Math.floor(nx/TILE), ty=Math.floor(ny/TILE);
-    if(!solid(tx,ty)){ px=nx; py=ny; frame=(frame+1)%2; beep(160,0.02); }
+    if(!solid(tx,ty)){ px=nx; py=ny; frame=(frame+1)%2; steps++; beep(160,0.02); }
     if(dx<0) facing=2; else if(dx>0) facing=3; else if(dy<0) facing=1; else facing=0;
     var exits=z().exits||[];
     for(var i=0;i<exits.length;i++){
@@ -289,7 +291,8 @@
       }
     }
     var tx=Math.floor(fx/TILE), ty=Math.floor(fy/TILE);
-    if(tileAt(tx,ty)===2){
+    if(tileAt(tx,ty)===4 && !flags.hiddenBerry){ flags.hiddenBerry=true; berries+=2; startDialog(['Found hidden berries!']); save(); }
+if(tileAt(tx,ty)===2){
       if(berries>=1){
         berries--;
         var p=party[active];
@@ -303,7 +306,8 @@
   function gainXP(amount){
     var p=party[active];
     p.xp += amount;
-    if(p.xp >= p.lvl*8){
+    if(p.name==='Hootling' && p.lvl>=8){ p.name='Owlie'; p.max+=6; p.atk+=2; startDialog(['Hootling evolved into Owlie!']); }
+if(p.xp >= p.lvl*8){
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
       beep(600,0.12);
       return true;
@@ -365,7 +369,9 @@
       if(wild.name.indexOf('Scalper')>=0){ startDialog(['Cannot catch trainers.']); return; }
       var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
       if(Math.random()<chance && party.length<5){
-        party.push({name:wild.name, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:3, lvl:4, xp:0, moves:['Peck']});
+        var isShiny = Math.random()<shinyOdds;
+party.push({name:wild.name, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:3, lvl:4, xp:0, moves:['Peck'], shiny:isShiny, held:null});
+if(isShiny) startDialog(['Shiny!']);
         beep(700,0.15);
         startDialog(['Got it!']); endBattle(true,true);
       } else startDialog(['Almost! It broke free.']);
@@ -433,7 +439,7 @@
     if(fade>0){ ctx.fillStyle='rgba(0,0,0,'+(fade/10)+')'; ctx.fillRect(0,0,w,h); }
     ctx.restore();
 
-    var hud = 'S'+score+' B'+badges+' W'+wins+' '+zone;
+    var hud = 'S'+score+' B'+badges+' W'+wins+' St'+steps+' '+zone+(dayPhase?' Night':'');
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
     if(zoneTimer>0){ zoneTimer--; if(zoneTimer<=0) document.getElementById('zoneFlash').style.display='none'; }
@@ -512,7 +518,8 @@
     (function(el,idx){ el.addEventListener('click', function(){ battleSel=idx; updateBattle(); battleAction(); }); })(bItems[k],k);
   }
 
-  setInterval(function(){
+  setInterval(function(){ playTime++; dayPhase = Math.floor(playTime/120)%2; }, 1000);
+setInterval(function(){
     if(dialog||menuOpen||inBattle) return;
     var tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
     if(tileAt(tx,ty)===3){
