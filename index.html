@@ -746,6 +746,25 @@ function openParty() {
 
 function loop() { update(); draw(); updateWalk();
   updateNPCs();
+  // Wild encounters in tall grass (tile 4)
+  if (!inBattle && !inDialog) {
+    const z = getZone();
+    const tx = Math.floor(px / TILE), ty = Math.floor(py / TILE);
+    if (tx >= 0 && ty >= 0 && tx < z.w && ty < z.h && z.map[ty][tx] === 4) {
+      if (Math.random() < 0.04) {
+        let wilds = [
+          { name: "Hootling", hp: 18, max: 18, moves: ["Peck"] },
+          { name: "Nestling", hp: 16, max: 16, moves: ["Fluff"] },
+          { name: "Packrat", hp: 20, max: 20, moves: ["Gnaw"] }
+        ];
+        let w = wilds[Math.floor(Math.random()*wilds.length)];
+        enemy = { ...w, log: "A wild " + w.name + " appeared!" };
+        inBattle = true;
+        catchMode = true;
+        battleMenu = 0;
+      }
+    }
+  }
   requestAnimationFrame(loop); }
 
 document.addEventListener('keydown', e => {
