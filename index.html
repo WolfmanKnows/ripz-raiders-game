@@ -600,20 +600,31 @@ function openSealed() {
   });
 }
 
+function doOpen(item) {
+  let results = [];
+  if (item === "ETB" && etbs > 0) {
+    etbs--;
+    // ETB rewards: guaranteed purify + chance of extra
+    purifyPotions++;
+    results.push("You opened the ETB!");
+    results.push("Got a Purify Potion.");
+    if (Math.random() < 0.3) { moveTutorItem = true; results.push("Also found a Move Scroll!"); }
+  } else if (packs > 0) {
+    packs--;
+    // Pack rewards
+    let r = Math.random();
+    if (r < 0.6) { berries++; results = ["You ripped the pack!", "Got a Nest Berry."]; }
+    else if (r < 0.85) { purifyPotions++; results = ["You ripped the pack!", "Got a Purify Potion!"]; }
+    else { moveTutorItem = true; results = ["You ripped the pack!", "Got a Move Scroll!"]; }
+  }
+  startDialog(results, null);
+  window.pendingOpen = null;
+}
+
 document.addEventListener('keydown', (e) => {
   if (!window.pendingOpen) return;
   if (e.key === '1') {
-    let item = window.pendingOpen;
-    if (item === "ETB" && etbs > 0) {
-      etbs--;
-      purifyPotions++;
-      startDialog(["You opened the ETB!", "Got a Purify Potion."], null);
-    } else if (packs > 0) {
-      packs--;
-      berries++;
-      startDialog(["You ripped the pack!", "Got a Nest Berry."], null);
-    }
-    window.pendingOpen = null;
+    doOpen(window.pendingOpen);
   } else if (e.key === '2') {
     startDialog(["Kept it sealed. Pat Flynn would be proud."], null);
     window.pendingOpen = null;
