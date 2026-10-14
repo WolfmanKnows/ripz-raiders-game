@@ -404,10 +404,31 @@ function drawBattle() {
   wrap(enemy.log || '', 16).forEach((ln, i) => ctx.fillText(ln, 16, 220 + i*14));
 }
 
+function drawEffect() {
+  if (effectTimer <= 0) return;
+  effectTimer--;
+  ctx.save();
+  if (effectType === "ultra") {
+    ctx.fillStyle = "rgba(255, 215, 0, " + (effectTimer/60) + ")";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#ffd700";
+    for (let i = 0; i < 8; i++) {
+      let a = (effectTimer * 0.1 + i) * Math.PI / 4;
+      ctx.fillRect(160 + Math.cos(a)*60, 144 + Math.sin(a)*40, 4, 4);
+    }
+  } else if (effectType === "rare") {
+    ctx.fillStyle = "rgba(180, 220, 255, " + (effectTimer/40 * 0.6) + ")";
+    ctx.fillRect(0, 0, c.width, c.height);
+  }
+  ctx.restore();
+  if (effectTimer <= 0) effectType = null;
+}
+
 function draw() {
   ctx.clearRect(0, 0, c.width, c.height);
   if (inBattle) drawBattle();
   else { drawWorld(); if (inDialog) drawDialog(); }
+  drawEffect();
 }
 
 function canMove(nx, ny) {
@@ -622,6 +643,9 @@ function doOpen(item) {
     else { moveTutorItem = true; rarity = "Ultra Rare"; results.push("Move Scroll (" + rarity + ")"); }
   }
   startDialog(results, null);
+  // Trigger visual effect based on rarity
+  if (results.some(r => r.includes("Ultra Rare"))) { effectType = "ultra"; effectTimer = 60; }
+  else if (results.some(r => r.includes("Rare"))) { effectType = "rare"; effectTimer = 40; }
   window.pendingOpen = null;
 }
 
