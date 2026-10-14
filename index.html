@@ -583,7 +583,8 @@ function drawStatScreen() {
   ctx.font = "12px monospace";
   ctx.fillText(m.name, 32, 40);
   ctx.font = "9px monospace";
-  ctx.fillText("HP:  " + m.hp + " / " + m.max, 32, 60);
+  ctx.fillText("Lv. " + (m.lvl||1), 32, 52);
+  ctx.fillText("HP:  " + m.hp + " / " + m.max, 32, 68);
   ctx.fillText("ATK: " + (m.atk||7), 32, 76);
   ctx.fillText("DEF: " + (m.def||5), 32, 92);
   ctx.fillText("SPD: " + (m.spd||6), 32, 108);
@@ -714,7 +715,7 @@ function battleSelect() {
     if (catchMode) {
       const chance = 0.35 + (1 - enemy.hp/enemy.max)*0.4;
       if (Math.random() < chance && party.length < 6) {
-        party.push({ name: enemy.name, hp: enemy.max, max: enemy.max, atk: enemy.atk||7, def: enemy.def||5, spd: enemy.spd||6, moves: enemy.moves || ["Peck"] });
+        party.push({ name: enemy.name, hp: enemy.max, max: enemy.max, atk: enemy.atk||7, def: enemy.def||5, spd: enemy.spd||6, lvl: 1, moves: enemy.moves || ["Peck"] });
         enemy.log = enemy.name + " was caught!";
         setTimeout(() => { inBattle = false; enemy = null; catchMode = false; }, 1400);
       } else {
@@ -734,7 +735,24 @@ function battleSelect() {
         let drop = "";
         if (r < 0.15) { etbs++; drop = " Dropped an ETB!"; }
         else if (r < 0.55) { packs++; drop = " Dropped a pack!"; }
-        enemy.log = (enemy.boss ? "Lead scalper defeated!" : "You win!") + drop;
+        // Level up
+        if (party[0].lvl) party[0].lvl++;
+        else party[0].lvl = 2;
+        party[0].max += 2;
+        party[0].hp = party[0].max;
+        party[0].atk = (party[0].atk||7) + 1;
+        // Evolution
+        let evo = "";
+        if (party[0].name === "Hootling" && party[0].lvl >= 5) {
+          party[0].name = "Chrome Hoot";
+          party[0].atk += 3;
+          evo = " Hootling evolved into Chrome Hoot!";
+        } else if (party[0].name === "Nestling" && party[0].lvl >= 5) {
+          party[0].name = "Owlie";
+          party[0].def += 3;
+          evo = " Nestling evolved into Owlie!";
+        }
+        enemy.log = (enemy.boss ? "Lead scalper defeated!" : "You win! Lv." + party[0].lvl) + drop + evo;
         markDefeated(enemy.id);
         if (enemy.id === 'scalper1') setFlag('beat1');
         if (enemy.id === 'scalper2') setFlag('beat2');
