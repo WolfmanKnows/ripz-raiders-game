@@ -46,7 +46,9 @@
 <div id="dialog"></div>
 <div id="menu">
   <div data-m="party">Party</div>
+  <div data-m="equip">Equip</div>
   <div data-m="items">Items</div>
+  <div data-m="dex">Dex</div>
   <div data-m="quests">Quests</div>
   <div data-m="save">Save</div>
   <div data-m="travel">Travel</div>
@@ -92,7 +94,7 @@
     plaza: ['hootling','nestling','moss'],
     route: ['packrat','foilpup','screech','pebble'],
     alley: ['spark','ember','dune'],
-    shop: ['frost']
+    shop: ['frost'], forest: ['moss','elderowl','canopy']
   };
   function randomWild(){
     var pool = ZONE_WILDS[zone] || ZONE_WILDS.plaza;
@@ -121,7 +123,7 @@
 
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
-  var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false;
+  var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0;
   var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
@@ -168,9 +170,9 @@
       ],
       npcs:[
         {x:3*TILE,y:4*TILE,name:'Note',lines:['A note: Scalpers meet in the alley.']},
-        {x:8*TILE,y:4*TILE,name:'Scalper',lines:['These packs are mine!']}
+        {x:8*TILE,y:4*TILE,name:'Scalper',lines:['These packs are mine!']},{x:4*TILE,y:6*TILE,name:'Rival',lines:['I will beat you!']}
       ],
-      exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE}]
+      exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE},{x:10,y:4,to:'forest',px:1*TILE,py:4*TILE}]
     },
     shop: {
       w:10, h:8,
@@ -186,6 +188,12 @@
       ],
       npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP 2 berries for a pack.']}],
       exits:[{x:5,y:1,to:'plaza',px:5*TILE,py:8*TILE}]
+    },
+    forest: {
+      w:10, h:8,
+      map:[[1,1,1,1,1,1,1,1,1,1],[1,0,0,3,3,3,0,0,0,1],[1,0,0,3,3,3,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1]],
+      npcs:[{x:5*TILE,y:4*TILE,name:'Ranger',lines:['Deep woods. Rare Owlies here.']}],
+      exits:[{x:1,y:4,to:'route',px:10*TILE,py:4*TILE}]
     },
     alley: {
       w:10, h:8,
@@ -277,16 +285,18 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','items','quests','save','travel','pc','rival','settings','minigame','reset','close'];
+    var acts=['party','equip','items','dex','quests','save','travel','pc','rival','settings','minigame','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
       lines.push('Seen: '+Object.keys(seen).length); lines.push('Tap again to cycle lead.');
       startDialog(lines); closeMenu();
-    } else if(a==='items'){
+    } else if(a==='equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry on '+party[active].name+'.']); } else startDialog(['No berries.']); closeMenu(); }
+else if(a==='items'){
       startDialog(['Berries: '+berries+' (heal)','Packs: '+packs+' (open for bonus)','ETBs: '+etbs]);
       closeMenu();
-    } else if(a==='quests'){
+    } else if(a==='dex'){ var lines=MONSTERS.map(function(m){ return (seen[m.stages[0]]?'*':'')+m.stages[0]+'/'+m.stages[1]+'/'+m.stages[2]; }); startDialog(lines.slice(0,6)); closeMenu(); }
+else if(a==='quests'){
       var q = [];
       q.push(flags.gotNote ? 'Note: found' : 'Note: find on route');
       q.push(flags.beatScalper ? 'Scalper: beaten' : 'Scalper: not yet');
@@ -295,6 +305,9 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     } else if(a==='save'){ save(); startDialog(['Saved.','Export: copy from console or use getSave()']); closeMenu(); }
 else if(a==='travel'){ fastTravel(); closeMenu(); }
 else if(a==='pc'){
+  var box = pc.map(function(p,i){ return i+': '+p.name+' Lv'+p.lvl; });
+  if(!box.length) box=['(empty)'];
+  startDialog(box.concat(['A deposits/withdraws.']));
   if(party.length>1){ var dep=party.pop(); pc.push(dep); startDialog(['Deposited '+dep.name+'. Box: '+pc.length]); }
   else if(pc.length){ var w=pc.pop(); party.push(w); startDialog(['Withdrew '+w.name+'.']); }
   else startDialog(['PC empty. Need more than 1 Owlie to deposit.']);
@@ -358,7 +371,8 @@ if(inBattle){ battleAction(); return; }
       var n=npcs[i];
       if(Math.abs(n.x-fx)<12 && Math.abs(n.y-fy)<12){
         if(n.name==='Clerk'){
-          var cost = badges>=1 ? 1 : 2;
+          if(n.name==='Clerk' && flags.shopExtra){ if(berries>=3){ berries-=3; packs++; etbs++; startDialog(['Bought pack + ETB.']); save(); return; } }
+var cost = badges>=1 ? 1 : 2;
 if(berries>=cost){ berries-=cost; packs++; startDialog(['SWAP done. Cost '+cost+' berries.']); save(); }
           else startDialog(['Need 2 berries.']);
         } else if(n.name==='Kid' && !flags.kidQuest && berries>=3){ berries-=3; packs++; flags.kidQuest=true; startDialog(['Thanks! Here is a pack.']); unlock('sidequest','Helped the Kid'); save(); }
@@ -366,7 +380,8 @@ else if(n.name==='Note' && !flags.gotNote){
           flags.gotNote=true; notes++;
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
-        } else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
+        } else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
+else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
 startBattle({name:'Scalper',hp:40,max:40,atk:12,def:5}, true);
 } else if(n.name==='Scalper' && !flags.beatScalper){
           startBattle({name:'Scalper',hp:30,max:30,atk:9,def:4}, true);
@@ -397,8 +412,8 @@ p.hp=party[active].hp;
   function gainXP(amount){
     var p=party[active];
     p.xp += amount;
-    var evo=checkEvo(p); if(evo) startDialog([p.name+' evolved into '+evo+'!']);
-if(p.xp >= p.lvl*8){
+    var evo=checkEvo(p); if(evo){ beep(720,0.15); startDialog([p.name+' evolved into '+evo+'!']); }
+if(p.xp >= p.lvl*8){ beep(600,0.12);
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
       beep(600,0.12);
       return true;
@@ -436,14 +451,17 @@ seen[wild.name]=true;
     var a=acts[battleSel];
     var p=party[active];
     if(a==='fight'){
-      if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); return; }
+      if(sleepTurns>0){ sleepTurns--; startDialog(['Asleep!']); return; }
+if(burnTurns>0){ burnTurns--; var bd=2; party[active].hp=Math.max(1,party[active].hp-bd); battleLog.push('Burn -'+bd); }
+if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); return; }
       var moves = p.moves || ['Peck','Gust','Tackle'];
       var move = moves[moveSel % moves.length];
       pickingMove=false;
       var bonus = move==='Gust'?3 : move==='Tackle'?1 : 0;
       var dmg = p.atk + bonus + (Math.random()<0.15 ? 4 : 0);
       battleLog.push(move+'!');
-if(Math.random()<0.1){ dmg+=2; battleLog.push('Burn!'); }
+if(Math.random()<0.12){ burnTurns=2; battleLog.push('Burned!'); }
+if(Math.random()<0.08){ sleepTurns=1; battleLog.push('Slept!'); }
       wild.hp -= dmg;
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg); shake=4;
@@ -469,7 +487,8 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
     } else if(a==='catch'){
       if(wild.name.indexOf('Scalper')>=0){ startDialog(['Cannot catch trainers.']); return; }
       var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
-      if(Math.random()<chance && party.length<5){
+      shake=8; beep(500,0.1);
+if(Math.random()<chance && party.length<5){
         var isShiny = Math.random()<shinyOdds;
 party.push({name:wild.name, species:wild.species, stage:wild.stage||0, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:wild.def||3, lvl:4, xp:0, moves:wild.moves||['Peck'], shiny:isShiny, held:null, color:wild.color});
 if(isShiny) startDialog(['Shiny!']);
@@ -546,7 +565,8 @@ if(battleLog.length){
     if(fade>0){ ctx.fillStyle='rgba(0,0,0,'+(fade/10)+')'; ctx.fillRect(0,0,w,h); }
     ctx.restore();
 
-    var hud = 'S'+score+' B'+badges+' W'+wins+' St'+steps+' '+zone+(dayPhase?' Night':'');
+    var qmark = !flags.gotNote?' [Note]':!flags.beatScalper?' [Scalper]':!flags.kidQuest?' [Kid]':'';
+var hud = 'S'+score+' B'+badges+' W'+wins+' St'+steps+' '+zone+qmark+(dayPhase?' Night':'');
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
     if(zoneTimer>0){ zoneTimer--; if(zoneTimer<=0) document.getElementById('zoneFlash').style.display='none'; }
