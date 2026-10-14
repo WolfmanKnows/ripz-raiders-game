@@ -397,8 +397,10 @@ function drawBattle() {
   let eKey = (enemy.name||'').toLowerCase().replace(/ /g,'_') + '_battle';
   let ex = 200, ey = 20;
   if (battleAnim.active && battleAnim.side === 'enemy') { ex -= 8; ey += 2; }
+  if (hitStun.active && hitStun.side === 'enemy' && hitStun.timer % 2 === 0) ctx.globalAlpha = 0.4;
   if (battleSprites[eKey]) ctx.drawImage(battleSprites[eKey], ex, ey, 64, 64);
   else if (battleSprites['packrat_battle']) ctx.drawImage(battleSprites['packrat_battle'], ex, ey, 64, 64);
+  ctx.globalAlpha = 1;
   // Enemy box
   drawGBBox(170, 12, 136, 52);
   ctx.fillStyle = GB.black;
@@ -408,7 +410,9 @@ function drawBattle() {
   // Player sprite with attack anim
   let px = 20, py = 90;
   if (battleAnim.active && battleAnim.side === 'player') { px += 8; py -= 2; }
+  if (hitStun.active && hitStun.side === 'player' && hitStun.timer % 2 === 0) ctx.globalAlpha = 0.4;
   if (battleSprites['owlie_battle']) ctx.drawImage(battleSprites['owlie_battle'], px, py, 64, 64);
+  ctx.globalAlpha = 1;
   // Player box
   drawGBBox(8, 148, 148, 52);
   ctx.fillStyle = GB.black;
@@ -455,6 +459,10 @@ function draw() {
   if (battleAnim.active) {
     battleAnim.timer--;
     if (battleAnim.timer <= 0) battleAnim.active = false;
+  }
+  if (hitStun.active) {
+    hitStun.timer--;
+    if (hitStun.timer <= 0) hitStun.active = false;
   }
   drawEffect();
 }
@@ -574,6 +582,7 @@ function battleSelect() {
       const dmg = 7 + Math.floor(Math.random()*6);
       enemy.hp -= dmg;
       battleAnim = { active: true, side: "player", timer: 12 };
+      hitStun = { active: true, side: "enemy", timer: 10 };
       enemy.log = party[0].name + " used " + (party[0].moves[0]||"Peck") + "! (" + dmg + ")";
       if (enemy.hp <= 0) {
         // Drop rates: 15% ETB, 40% pack, 45% nothing
