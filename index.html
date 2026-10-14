@@ -393,18 +393,22 @@ function drawBattle() {
   if (!inBattle || !enemy) return;
   ctx.fillStyle = '#88c070';
   ctx.fillRect(0, 0, 320, 288);
-  // Enemy sprite
+  // Enemy sprite with attack anim
   let eKey = (enemy.name||'').toLowerCase().replace(/ /g,'_') + '_battle';
-  if (battleSprites[eKey]) ctx.drawImage(battleSprites[eKey], 200, 20, 64, 64);
-  else if (battleSprites['packrat_battle']) ctx.drawImage(battleSprites['packrat_battle'], 200, 20, 64, 64);
+  let ex = 200, ey = 20;
+  if (battleAnim.active && battleAnim.side === 'enemy') { ex -= 8; ey += 2; }
+  if (battleSprites[eKey]) ctx.drawImage(battleSprites[eKey], ex, ey, 64, 64);
+  else if (battleSprites['packrat_battle']) ctx.drawImage(battleSprites['packrat_battle'], ex, ey, 64, 64);
   // Enemy box
   drawGBBox(170, 12, 136, 52);
   ctx.fillStyle = GB.black;
   ctx.font = '9px monospace';
   ctx.fillText(enemy.name, 180, 28);
   drawHPBar(180, 44, 70, enemy.hp, enemy.max);
-  // Player sprite
-  if (battleSprites['owlie_battle']) ctx.drawImage(battleSprites['owlie_battle'], 20, 90, 64, 64);
+  // Player sprite with attack anim
+  let px = 20, py = 90;
+  if (battleAnim.active && battleAnim.side === 'player') { px += 8; py -= 2; }
+  if (battleSprites['owlie_battle']) ctx.drawImage(battleSprites['owlie_battle'], px, py, 64, 64);
   // Player box
   drawGBBox(8, 148, 148, 52);
   ctx.fillStyle = GB.black;
@@ -448,6 +452,10 @@ function draw() {
   ctx.clearRect(0, 0, c.width, c.height);
   if (inBattle) drawBattle();
   else { drawWorld(); if (inDialog) drawDialog(); }
+  if (battleAnim.active) {
+    battleAnim.timer--;
+    if (battleAnim.timer <= 0) battleAnim.active = false;
+  }
   drawEffect();
 }
 
@@ -565,6 +573,7 @@ function battleSelect() {
     } else {
       const dmg = 7 + Math.floor(Math.random()*6);
       enemy.hp -= dmg;
+      battleAnim = { active: true, side: "player", timer: 12 };
       enemy.log = party[0].name + " used " + (party[0].moves[0]||"Peck") + "! (" + dmg + ")";
       if (enemy.hp <= 0) {
         // Drop rates: 15% ETB, 40% pack, 45% nothing
