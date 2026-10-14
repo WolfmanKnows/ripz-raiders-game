@@ -496,34 +496,52 @@ function canWalk(tx, ty) {
   const z = getZone();
   if (tx < 0 || ty < 0 || tx >= z.w || ty >= z.h) return false;
   const t = z.map[ty][tx];
-  return t !== 1 && t !== 2 && t !== 3; // not wall/building/water
+  return t !== 1 && t !== 2 && t !== 3;
 }
 function updateNPCs() {
   const z = getZone();
   z.npcs.forEach(n => {
     if (!n.battle) return;
-    if (!n.path) n.path = { target: null, timer: 0 };
-    n.path.timer++;
-    // Pick new target every 90 frames or when reached
-    if (!n.path.target || n.path.timer > 90) {
-      n.path.timer = 0;
-      let tries = 0;
-      while (tries < 8) {
-        let tx = Math.floor(n.x/TILE) + (Math.floor(Math.random()*5)-2);
-        let ty = Math.floor(n.y/TILE) + (Math.floor(Math.random()*5)-2);
-        if (canWalk(tx, ty)) { n.path.target = { x: tx*TILE+8, y: ty*TILE+8 }; break; }
-        tries++;
-      }
+    if (!n.ai) n.ai = { state: "idle", timer: 0, target: null };
+    let dx = px - n.x, dy = py - n.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    // State transitions
+    if (dist < 48 && n.ai.state !== "alert") {
+      n.ai.state = "alert";
+      n.ai.timer = 0;
+    } else if (dist > 80 && n.ai.state === "alert") {
+      n.ai.state = "patrol";
+      n.ai.timer = 0;
+    } else if (n.ai.state === "idle" && n.ai.timer > 120) {
+      n.ai.state = "patrol";
+      n.ai.timer = 0;
     }
-    if (n.path.target) {
-      let dx = n.path.target.x - n.x;
-      let dy = n.path.target.y - n.y;
-      let dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist > 4) {
-        n.x += (dx/dist) * 0.6;
-        n.y += (dy/dist) * 0.6;
-      } else {
-        n.path.target = null;
+    n.ai.timer++;
+    // Behavior
+    if (n.ai.state === "idle") {
+      // stand still
+    } else if (n.ai.state === "patrol") {
+      if (!n.ai.target || n.ai.timer > 90) {
+        n.ai.timer = 0;
+        let tries = 0;
+        while (tries < 8) {
+          let tx = Math.floor(n.x/TILE) + (Math.floor(Math.random()*5)-2);
+          let ty = Math.floor(n.y/TILE) + (Math.floor(Math.random()*5)-2);
+          if (canWalk(tx, ty)) { n.ai.target = { x: tx*TILE+8, y: ty*TILE+8 }; break; }
+          tries++;
+        }
+      }
+      if (n.ai.target) {
+        let tdx = n.ai.target.x - n.x, tdy = n.ai.target.y - n.y;
+        let td = Math.sqrt(tdx*tdx + tdy*tdy);
+        if (td > 4) { n.x += (tdx/td)*0.5; n.y += (tdy/td)*0.5; }
+        else n.ai.target = null;
+      }
+    } else if (n.ai.state === "alert") {
+      // Face the player and step closer
+      if (dist > 20) {
+        n.x += (dx/dist)*0.8;
+        n.y += (dy/dist)*0.8;
       }
     }
   });
