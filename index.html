@@ -483,6 +483,21 @@ function drawBattle() {
   wrap(enemy.log || '', 16).forEach((ln, i) => ctx.fillText(ln, 16, 220 + i*14));
 }
 
+
+function drawSparkle() {
+  if (sparkleTimer <= 0) return;
+  sparkleTimer--;
+  ctx.save();
+  ctx.fillStyle = "#ffd700";
+  for (let i = 0; i < 6; i++) {
+    let a = (sparkleTimer * 0.15 + i * 1.047);
+    let x = 200 + Math.cos(a) * (20 + (sparkleTimer % 20));
+    let y = 50 + Math.sin(a) * (15 + (sparkleTimer % 15));
+    ctx.fillRect(x, y, 3, 3);
+  }
+  ctx.restore();
+}
+
 function drawEffect() {
   if (effectTimer <= 0) return;
   effectTimer--;
@@ -630,6 +645,7 @@ function draw() {
   }
   drawEffect();
   if (statScreen) drawStatScreen();
+  if (sparkleTimer > 0) drawSparkle();
 }
 
 function canMove(nx, ny) {
@@ -827,6 +843,7 @@ function loop() { update(); draw(); updateWalk();
         let w = wilds[Math.floor(Math.random()*wilds.length)];
         let shiny = Math.random() < 0.08;
         enemy = { ...w, shiny: shiny, mon: { name: w.name, hp: w.max, max: w.max, moves: w.moves, shiny: shiny }, log: (shiny ? "A shiny " : "A wild ") + w.name + " appeared!" };
+        if (shiny) sparkleTimer = 90;
         inBattle = true;
         catchMode = true;
         battleMenu = 0;
