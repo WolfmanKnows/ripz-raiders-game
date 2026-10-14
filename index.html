@@ -488,12 +488,17 @@ function drawSparkle() {
   if (sparkleTimer <= 0) return;
   sparkleTimer--;
   ctx.save();
+  // Gold flash
+  ctx.fillStyle = "rgba(255, 215, 0, " + (sparkleTimer / 90 * 0.4) + ")";
+  ctx.fillRect(0, 0, c.width, c.height);
+  // Spinning particles
   ctx.fillStyle = "#ffd700";
-  for (let i = 0; i < 6; i++) {
-    let a = (sparkleTimer * 0.15 + i * 1.047);
-    let x = 200 + Math.cos(a) * (20 + (sparkleTimer % 20));
-    let y = 50 + Math.sin(a) * (15 + (sparkleTimer % 15));
-    ctx.fillRect(x, y, 3, 3);
+  for (let i = 0; i < 12; i++) {
+    let a = (sparkleTimer * 0.2 + i * 0.52);
+    let r = 30 + (sparkleTimer % 30);
+    let x = 220 + Math.cos(a) * r;
+    let y = 50 + Math.sin(a) * r * 0.6;
+    ctx.fillRect(x, y, 4, 4);
   }
   ctx.restore();
 }
