@@ -180,8 +180,8 @@ if(typeof d.ngPlus==='boolean') ngPlus=d.ngPlus;
   }
   try{ var sv=localStorage.getItem('ripz_save'); if(sv) loadSave(JSON.parse(sv)); }catch(e){}
   function unlock(id, msg){
-  if(achievements.indexOf(id)<0){ achievements.push(id); startDialog(['Achievement: '+msg]); beep(800,0.1); }
-}
+    if(achievements.indexOf(id)<0){ achievements.push(id); startDialog(['Achievement: '+msg]); beep(800,0.1); }
+  }
 function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave())); }catch(e){} }
 
   function beep(freq, dur){
@@ -331,6 +331,8 @@ if(inBattle){ battleAction(); return; }
             if(pull < 0.03){ etbs++; badges++; msg = 'JACKPOT! ETB + Badge!'; }
 else if(pull < 0.08){ etbs++; msg = 'ETB pull!'; }
 else if(pull < 0.12){ packs++; msg = 'Bonus pack!'; }
+else if(pull < 0.18){ tokens+=8; msg = 'Token burst! +8'; }
+else if(pull < 0.25){ berries+=4; msg = 'Berry burst! +4'; }
             else if(pull < 0.15){ berries += 5; msg = 'Big berry pull! +5'; }
             else if(pull < 0.35){ tokens += 6; msg = 'Token pull! +6'; }
             else if(pull < 0.55){ berries += 2; tokens += 2; msg = 'Mixed pull. +2 berries, +2 tokens'; }
@@ -389,7 +391,7 @@ p.hp=party[active].hp;
   function gainXP(amount){
     var p=party[active];
     p.xp += amount;
-    var evo=checkEvo(p); if(evo){ shake=10; beep(720,0.2); startDialog([p.name+' evolved into '+evo+'!','HP +'+(p.max-24)+' ATK +'+(p.atk-10)]); }
+    var evo=checkEvo(p); if(evo){ shake=10; beep(720,0.2); startDialog([p.name+' evolved into '+evo+'!','HP '+p.max+'  ATK '+p.atk]); }
 if(p.xp >= p.lvl*8){ beep(600,0.12);
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
       beep(600,0.12);
@@ -463,6 +465,7 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
       else startDialog(['Only one Owlie.']);
     } else if(a==='catch'){
       if(wild.name.indexOf('Scalper')>=0 || wild.name==='Rival'){ startDialog(['Cannot catch trainers.']); return; }
+var odds = Math.round((0.25 + (1 - wild.hp/wild.max)*0.55)*100);
       var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
       var shakes = Math.random() < chance ? 3 : Math.floor(Math.random()*3);
       var msgs = [];
@@ -471,7 +474,8 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
         var isShiny = Math.random()<shinyOdds;
         party.push({name:wild.name, species:wild.species, stage:wild.stage||0, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:wild.def||3, lvl:4, xp:0, moves:wild.moves||['Peck','Gust','Tackle'], shiny:isShiny, held:null, color:wild.color});
         if(isShiny) msgs.push('Shiny!');
-        msgs.push('Got it!');
+        msgs.unshift(odds+'% chance');
+msgs.push('Got it!');
         unlock('firstcatch','First Catch');
         beep(700,0.15);
         startDialog(msgs);
