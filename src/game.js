@@ -1,6 +1,13 @@
 
 (function(){
   'use strict';
+  var sprites = {};
+  var spriteNames = ['hootling','nestling','owlie_trainer','packrat','chrome_hoot','bulkbuyer','clearout','foilghost','resale','ripper','shelfcleaner'];
+  spriteNames.forEach(function(n){
+    var img = new Image();
+    img.src = 'assets/sprites/'+n+'.png';
+    sprites[n] = img;
+  });
   var canvas = document.getElementById('c');
   var ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -504,30 +511,19 @@ msgs.push('Got it!');
     ctx.fillStyle=col; ctx.fillRect(x+1,y+1, Math.max(0, (w-2)*(cur/max)), h-2);
   }
 
-  function drawSprite(x,y,body,eyes,stage){
-    var f = Math.floor(frame/4)%2;
-    stage = stage||0;
-    var bob = eyes ? ((frame%8<4)?0:1) : ((frame%12<6)?0:1);
-    y += bob;
-    // legs
-    ctx.fillStyle=body;
-    ctx.fillRect(x+3, y+10, 3, 5);
-    ctx.fillRect(x+9, y+10, 3, 5);
-    // torso
-    ctx.fillRect(x+4, y+5, 7, 6);
-    // arms
-    ctx.fillRect(x+1, y+6, 2, 4);
-    ctx.fillRect(x+12, y+6, 2, 4);
-    // head
-    ctx.fillStyle=body;
-    ctx.fillRect(x+4, y+1, 7, 5);
-    if(stage>=1){ ctx.fillStyle='#fff'; ctx.fillRect(x+(f?3:10), y, 3, 2); }
-    if(stage>=2){ ctx.fillStyle='#ff0'; ctx.fillRect(x+10, y, 3, 2); }
-    if(eyes){
-      ctx.fillStyle='#fff';
-      ctx.fillRect(x+5, y+2, 2, 2); ctx.fillRect(x+8, y+2, 2, 2);
-      ctx.fillStyle='#000';
-      ctx.fillRect(x+5, y+3, 1, 1); ctx.fillRect(x+8, y+3, 1, 1);
+  function drawSprite(x,y,body,eyes,stage,species){
+    var key = species || 'hootling';
+    if(key==='owlie') key='owlie_trainer';
+    var img = sprites[key];
+    if(img && img.complete && img.naturalWidth){
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, x, y, TILE, TILE);
+    } else {
+      ctx.fillStyle=body||'#3050b0';
+      ctx.fillRect(x+4,y+1,7,5);
+      ctx.fillRect(x+4,y+5,7,6);
+      ctx.fillRect(x+3,y+10,3,5);
+      ctx.fillRect(x+9,y+10,3,5);
     }
   }
 
@@ -559,9 +555,9 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     for(var i=0;i<npcs.length;i++){
       var n=npcs[i];
       var col = n.name.indexOf('Scalper')>=0 ? '#c03030' : n.name==='Clerk'||n.name==='Shopkeeper' ? '#f0c080' : n.name==='Note' ? '#e0e080' : '#c0b090';
-      drawSprite(ox+n.x, oy+n.y, col, n.name!=='Note', 0);
+      drawSprite(ox+n.x, oy+n.y, col, n.name!=='Note', 0, n.name==='Clerk'||n.name==='Shopkeeper'?'owlie_trainer':'hootling');
     }
-    drawSprite(ox+px, oy+py, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage);
+    drawSprite(ox+px, oy+py, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage, (party[active]&&party[active].species)||'hootling');
 
     if(inBattle && wild){
       ctx.fillStyle='#000d'; ctx.fillRect(0,0,w,h);
@@ -570,8 +566,8 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       drawBar(90,22,60,6, Math.max(0,wild.hp), wild.max, '#e04040');
       ctx.fillText(party[active].name+' Lv'+party[active].lvl, 8, 100);
       drawBar(8,104,70,6, party[active].hp, party[active].max, '#40c040');
-      drawSprite(110, 36, wild.color||'#c05040', true, wild.stage);
-      drawSprite(16+attackOffset, 60, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage);
+      drawSprite(110, 36, wild.color||'#c05040', true, wild.stage, wild.species||'hootling');
+      drawSprite(16+attackOffset, 60, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage, (party[active]&&party[active].species)||'hootling');
       if(pickingMove){
       var ms = party[active].moves || ['Peck','Gust','Tackle'];
       var hints = {Peck:'normal', Gust:'strong', Tackle:'steady'};
