@@ -103,7 +103,7 @@ var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = 
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
   var loading = true, loadProgress = 0, introPlaying = false, introFrame = 0, titleScreen = true, partyScreen = false, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
-  var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
+  var catchStreak = 0, wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
   var zones = {
     plaza: {
@@ -611,12 +611,12 @@ flash=6;
         if(isShiny){ msgs.push('Shiny!'); flash=15; }
         msgs.unshift(odds+'% chance');
 msgs.push('Got it!');
-        unlock('firstcatch','First Catch');
+        catchStreak++; if(catchStreak>=3){ tokens+=2; battleLog.push('Streak bonus!'); } unlock('firstcatch','First Catch');
         beep(700,0.15);
         startDialog(msgs);
         endBattle(true,true);
       } else {
-        msgs.push('Broke free!');
+        catchStreak=0; msgs.push('Broke free!');
         beep(300,0.1);
         startDialog(msgs);
       }
@@ -925,7 +925,8 @@ if(titleScreen){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(
     (function(el,idx){ el.addEventListener('click', function(){ battleSel=idx; updateBattle(); battleAction(); }); })(bItems[k],k);
   }
 
-  setInterval(function(){ playTime++; if(steps>0 && steps%100===0) dayPhase = dayPhase?0:1; dayPhase = Math.floor(playTime/120)%2; if(playTime%30===0) weather = weather?0:1; }, 1000);
+  setInterval(function(){ playTime++; if(steps>0 && steps%100===0) dayPhase = dayPhase?0:1;
+if(steps%50===0) weather = Math.floor(Math.random()*3); dayPhase = Math.floor(playTime/120)%2; if(playTime%30===0) weather = weather?0:1; }, 1000);
 setInterval(function(){
     if(dialog||menuOpen||inBattle) return;
     var tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
