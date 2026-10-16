@@ -527,8 +527,25 @@ msgs.push('Got it!');
     }
   }
 
+  function drawBg(w,h){
+    // sky
+    ctx.fillStyle = dayPhase ? '#1a1a3a' : '#87ceeb';
+    ctx.fillRect(0,0,w,h*0.6);
+    // ground
+    ctx.fillStyle = dayPhase ? '#1a2a1a' : '#88c070';
+    ctx.fillRect(0,h*0.6,w,h*0.4);
+    // simple clouds or stars
+    if(!dayPhase){
+      ctx.fillStyle='#fff';
+      ctx.fillRect(20,12,16,6); ctx.fillRect(80,20,12,4);
+    } else {
+      ctx.fillStyle='#fff';
+      ctx.fillRect(30,15,2,2); ctx.fillRect(90,25,2,2); ctx.fillRect(50,10,1,1);
+    }
+  }
   function draw(){
     var w=canvas.width, h=canvas.height;
+    drawBg(w,h);
     ctx.save();
     if(shake>0){ ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
     if(dayPhase){ ctx.fillStyle='rgba(10,10,40,0.35)'; ctx.fillRect(0,0,w,h); }
