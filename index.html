@@ -26,6 +26,9 @@
   #battleMenu { bottom:120px; right:12px; min-width:170px; }
   #menu div, #battleMenu div { padding:14px 18px; font-size:17px; border-radius:8px; margin:2px 0; }
   #menu div.sel, #battleMenu div.sel { background:var(--gold); color:#000; font-weight:700; }
+  #resourceBar { position:absolute; top:8px; right:80px; display:flex; gap:8px; z-index:15; }
+  #resourceBar span { background:#0a0a0acc; color:#fff; border:2px solid var(--gold); border-radius:6px; padding:4px 8px; font-size:12px; font-weight:600; }
+  #battleStatus { position:absolute; top:40px; left:8px; color:#ff0; background:#0a0a0acc; padding:4px 8px; font-size:12px; display:none; z-index:15; border-radius:4px; }
   #hud { position:absolute; top:8px; left:8px; color:#fff; background:#0a0a0acc; padding:6px 10px; font-size:13px; z-index:15; pointer-events:none; border:2px solid var(--gold); border-radius:6px; }
   #zoneFlash { position:absolute; top:40%; left:0; right:0; text-align:center; color:#fff; font-size:22px; font-weight:700; text-shadow:2px 2px #000; display:none; z-index:25; pointer-events:none; }
   #accountBar { position:absolute; top:6px; right:6px; z-index:30; font-size:13px; }
@@ -37,7 +40,13 @@
 <body>
 <div id="accountBar"><button id="signInBtn">Sign in</button></div>
 <div id="wrap"><canvas id="c" width="160" height="144"></canvas></div>
-<div id="hud">Score 0</div>
+<div id="hud">PLAZA</div>
+<div id="resourceBar">
+  <span id="resBerries">B 5</span>
+  <span id="resPacks">P 1</span>
+  <span id="resTokens">T 0</span>
+</div>
+<div id="battleStatus"></div>
 <div id="zoneFlash"></div>
 <div id="ui">
   <div id="dpad">
