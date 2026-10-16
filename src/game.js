@@ -126,29 +126,49 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
       ],
       exits:[
         {x:5,y:1,to:'route',px:5*TILE,py:8*TILE},
-        {x:5,y:8,to:'shop',px:5*TILE,py:1*TILE},
+        {x:5,y:8,to:'shop',px:5*TILE,py:1*TILE},{x:3,y:1,to:'center',px:5*TILE,py:5*TILE},
         {x:10,y:5,to:'alley',px:1*TILE,py:5*TILE},{x:1,y:5,to:'rooftop',px:1*TILE,py:3*TILE}
       ]
     },
     route: {
-      w:12, h:10,
+      w:16, h:14,
       map:[
-        [1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,0,0,0,3,3,3,0,0,0,0,1],
-        [1,0,0,0,3,3,3,0,0,0,0,1],
-        [1,0,0,0,0,0,0,0,0,0,0,1],
-        [1,0,0,0,0,0,0,0,0,0,0,1],
-        [1,0,0,0,0,0,0,0,0,0,0,1],
-        [1,0,0,0,0,0,0,0,0,0,0,1],
-        [1,0,0,0,0,0,0,0,0,0,0,1],
-        [1,0,0,0,0,0,0,0,0,0,0,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1]
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,3,3,3,3,0,0,0,0,0,0,1],
+        [1,0,0,0,0,3,3,3,3,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,3,3,3,0,0,0,3,3,3,0,0,0,1],
+        [1,0,0,3,3,3,0,0,0,3,3,3,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,3,3,0,0,0,0,0,0,0,3,3,0,0,1],
+        [1,0,3,3,0,0,0,0,0,0,0,3,3,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
       ],
       npcs:[
         {x:3*TILE,y:4*TILE,name:'Note',lines:['A note: Scalpers meet in the alley.']},
         {x:8*TILE,y:4*TILE,name:'Scalper',lines:['These packs are mine!']},{x:4*TILE,y:6*TILE,name:'Rival',lines:['I will beat you!']}
       ],
       exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE},{x:10,y:4,to:'forest',px:1*TILE,py:4*TILE}]
+    },
+
+    center: {
+      w:10, h:8,
+      map:[
+        [1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,4,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1]
+      ],
+      npcs:[{x:5*TILE,y:3*TILE,name:'Nurse',lines:['Welcome to the Center.','Your creatures are fully healed.']}],
+      exits:[{x:5,y:6,to:'plaza',px:5*TILE,py:6*TILE}]
     },
     shop: {
       w:10, h:8,
@@ -368,7 +388,8 @@ if(inBattle){ battleAction(); return; }
     for(var i=0;i<npcs.length;i++){
       var n=npcs[i];
       if(Math.abs(n.x-fx)<12 && Math.abs(n.y-fy)<12){
-        if(n.name==='Pack Bar'){
+        if(n.name==='Nurse'){ for(var hi=0;hi<party.length;hi++){ party[hi].hp=party[hi].max; } startDialog(['Your creatures are fully healed.']); save(); return; }
+if(n.name==='Pack Bar'){
           if(packs>=1){
             packs--;
             var pull = Math.random();
@@ -712,7 +733,7 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       var hints = {Peck:'normal', Gust:'strong', Tackle:'steady'};
       for(var mi=0; mi<ms.length; mi++){
         ctx.fillStyle = mi===moveSel ? '#ff0' : '#ccc';
-        ctx.fillText((mi===moveSel?'> ':'  ')+ms[mi]+' ('+(hints[ms[mi]]||'')+')', 8, 108+mi*12);
+        var md=MOVES[ms[mi]]||{}; ctx.fillText((mi===moveSel?'> ':'  ')+ms[mi]+' ['+(md.type||'')+'] '+(md.pwr||''), 8, 108+mi*12);
       }
     }
 if(battleLog.length){ ctx.fillStyle='#fff'; ctx.font='8px monospace'; var last=battleLog.slice(-2); for(var bi=0;bi<last.length;bi++) ctx.fillText(last[bi], 4, 130+bi*8); }
