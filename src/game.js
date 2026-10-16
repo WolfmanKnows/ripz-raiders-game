@@ -26,7 +26,7 @@
     plaza: ['hootling','nestling','moss'],
     route: ['packrat','foilpup','screech','pebble'],
     alley: ['spark','ember','dune'],
-    shop: ['frost'], forest: ['moss','elderowl','canopy']
+    shop: ['frost'], forest: ['moss','elderowl','canopy'], rooftop: ['canopy','elderowl','screech']
   };
   function randomWild(){
     var pool = ZONE_WILDS[zone] || ZONE_WILDS.plaza;
@@ -83,7 +83,7 @@
       exits:[
         {x:5,y:1,to:'route',px:5*TILE,py:8*TILE},
         {x:5,y:8,to:'shop',px:5*TILE,py:1*TILE},
-        {x:10,y:5,to:'alley',px:1*TILE,py:5*TILE}
+        {x:10,y:5,to:'alley',px:1*TILE,py:5*TILE},{x:1,y:5,to:'rooftop',px:1*TILE,py:3*TILE}
       ]
     },
     route: {
@@ -120,6 +120,12 @@
       ],
       npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP berries for packs.']},{x:6*TILE,y:3*TILE,name:'Pack Bar',lines:['Rip packs. 5 tokens to buy one.']}],
       exits:[{x:5,y:1,to:'plaza',px:5*TILE,py:8*TILE}]
+    },
+    rooftop: {
+      w:8, h:6,
+      map:[[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,3,3,3,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+      npcs:[{x:3*TILE,y:2*TILE,name:'Lookout',lines:['High up. Rare views and rare Owlies.']}],
+      exits:[{x:1,y:3,to:'plaza',px:10*TILE,py:5*TILE}]
     },
     forest: {
       w:10, h:8,
@@ -322,7 +328,8 @@ if(inBattle){ battleAction(); return; }
             packs--;
             var pull = Math.random();
             var msg = '';
-            if(pull < 0.05){ etbs++; msg = 'JACKPOT! ETB!'; }
+            if(pull < 0.03){ etbs++; badges++; msg = 'JACKPOT! ETB + Badge!'; }
+else if(pull < 0.08){ etbs++; msg = 'ETB pull!'; }
             else if(pull < 0.15){ berries += 5; msg = 'Big berry pull! +5'; }
             else if(pull < 0.35){ tokens += 6; msg = 'Token pull! +6'; }
             else if(pull < 0.55){ berries += 2; tokens += 2; msg = 'Mixed pull. +2 berries, +2 tokens'; }
@@ -431,7 +438,7 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
       battleLog.push(move+'!');
 if(Math.random()<0.12){ burnTurns=2; battleLog.push('Burned!'); }
 if(Math.random()<0.08){ sleepTurns=1; battleLog.push('Slept!'); }
-      wild.hp -= dmg;
+      wild.hp -= dmg; shake=5;
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg); shake=4;
       if(wild.hp<=0){
@@ -441,7 +448,7 @@ if(wild.name==='Rival'){ rivalWins++; unlock('rival','Beat Rival'); }
         startDialog(['You won!']); endBattle(true,false); return;
       }
       var back = Math.max(1, wild.atk - Math.floor(p.def/3));
-      p.hp -= back;
+      p.hp -= back; shake=4;
       battleLog.push('Took '+back);
       if(p.hp<=0){ p.hp=1; startDialog(['Your Owlie is tired.']); endBattle(false,false); return; }
 if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p.hp+10); p.held=null; battleLog.push('Held Berry!'); } }
