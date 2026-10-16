@@ -26,6 +26,8 @@
   #battleMenu { bottom:120px; right:12px; min-width:170px; }
   #menu div, #battleMenu div { padding:14px 18px; font-size:17px; border-radius:8px; margin:2px 0; }
   #menu div.sel, #battleMenu div.sel { background:var(--gold); color:#000; font-weight:700; }
+  #questTracker { position:absolute; bottom:140px; left:8px; background:#0a0a0acc; color:#fff; border:2px solid var(--gold); border-radius:6px; padding:6px 10px; font-size:12px; z-index:15; max-width:140px; }
+  #questTracker .done { color:#6c6; }
   #resourceBar { position:absolute; top:8px; right:80px; display:flex; gap:8px; z-index:15; }
   #resourceBar span { background:#0a0a0acc; color:#fff; border:2px solid var(--gold); border-radius:6px; padding:4px 8px; font-size:12px; font-weight:600; }
   #battleStatus { position:absolute; top:40px; left:8px; color:#ff0; background:#0a0a0acc; padding:4px 8px; font-size:12px; display:none; z-index:15; border-radius:4px; }
@@ -41,6 +43,7 @@
 <div id="accountBar"><button id="signInBtn">Sign in</button></div>
 <div id="wrap"><canvas id="c" width="160" height="144"></canvas></div>
 <div id="hud">PLAZA</div>
+<div id="questTracker"></div>
 <div id="resourceBar">
   <span id="resBerries">B 5</span>
   <span id="resPacks">P 1</span>
