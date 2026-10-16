@@ -203,7 +203,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
   function startDialog(lines){
     dialog=lines; dialogIdx=0;
     var el=document.getElementById('dialog');
-    el.style.display='block'; el.textContent=lines[0]; if(textSpeed>1) setTimeout(advanceDialog, 400);
+    el.style.display='block'; el.textContent=lines[0]; if(textSpeed>1) setTimeout(advanceDialog, 250);
     beep(440,0.05);
   }
   function advanceDialog(){
@@ -212,20 +212,33 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     if(dialogIdx>=dialog.length){ dialog=null; document.getElementById('dialog').style.display='none'; }
     else document.getElementById('dialog').textContent=dialog[dialogIdx];
   }
-  function openMenu(){ menuOpen=true; menuSel=0; document.getElementById('menu').style.display='block'; updateMenu(); }
+  function openMenu(){
+    menuOpen=true; menuSel=0;
+    var menu = document.getElementById('menu');
+    var labels = ['Party','Reorder','Equip','Items','Dex','Quests','Save','Travel','PC','Rival','Settings','Card Flip','Reset','Close'];
+    menu.innerHTML = labels.map(function(l){ return '<div>'+l+'</div>'; }).join('');
+    menu.style.display='block';
+    updateMenu();
+    // rebind clicks
+    var mItems=menu.querySelectorAll('div');
+    for(var j=0;j<mItems.length;j++){
+      (function(el,idx){ el.addEventListener('click', function(){ menuSel=idx; updateMenu(); menuAction(); }); })(mItems[j],j);
+    }
+  }
   function closeMenu(){ menuOpen=false; document.getElementById('menu').style.display='none'; }
   function updateMenu(){
     var items=document.querySelectorAll('#menu div');
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','equip','items','dex','quests','save','travel','pc','rival','settings','minigame','reset','close'];
+    var acts=['party','reorder','equip','items','dex','quests','save','travel','pc','rival','settings','minigame','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
       lines.push('Seen: '+Object.keys(seen).length); lines.push('Tap again to cycle lead.');
       startDialog(lines); closeMenu();
-    } else if(a==='equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry on '+party[active].name+'.']); } else startDialog(['No berries.']); closeMenu(); }
+    } else if(a==='reorder'){ if(party.length>1){ var lead=party.shift(); party.push(lead); active=0; startDialog(['Lead is now '+party[0].name+'.']); } else startDialog(['Only one Owlie.']); closeMenu(); }
+else if(a==='equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry on '+party[active].name+'.']); } else startDialog(['No berries.']); closeMenu(); }
 else if(a==='items'){
       startDialog(['Berries: '+berries+' (heal)','Packs: '+packs+' (open for bonus)','ETBs: '+etbs]);
       closeMenu();
@@ -236,7 +249,7 @@ else if(a==='quests'){
       q.push(flags.beatScalper ? 'Scalper: beaten' : 'Scalper: not yet');
       q.push(flags.beatLead ? 'Lead: beaten' : 'Lead: in alley');
       startDialog(q); closeMenu();
-    } else if(a==='save'){ save(); startDialog(['Saved.','Export: copy from console or use getSave()']); closeMenu(); }
+    } else if(a==='save'){ save(); startDialog(['Saved.','This session: '+steps+' steps, '+wins+' wins, '+tokens+' tokens']); closeMenu(); }
 else if(a==='travel'){ fastTravel(); closeMenu(); }
 else if(a==='pc'){
   var box = pc.map(function(p,i){ return i+': '+p.name+' Lv'+p.lvl; });
@@ -249,7 +262,7 @@ else if(a==='pc'){
 } else if(a==='rival'){
   startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true);
   closeMenu();
-} else if(a==='settings'){ mute=!mute; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
+} else if(a==='settings'){ mute=!mute; textSpeed = textSpeed===1?2:1; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
     else if(a==='minigame'){ var r=Math.random()<0.5; if(r){ berries++; startDialog(['Card flip: win! +1 berry.']); } else startDialog(['Card flip: lose.']); closeMenu(); }
 else if(a==='reset'){ if(confirm('Reset all progress?')){ localStorage.removeItem('ripz_save'); location.reload(); } closeMenu(); }
 else closeMenu();
@@ -562,8 +575,8 @@ var hud = 'S'+score+' B'+badges+' W'+wins+' St'+steps+' '+zone+qmark+(dayPhase?'
     if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) openMenu(); }
     if(e.key==='n'){ mute=!mute; startDialog([mute?'Muted.':'Sound on.']); }
     if(menuOpen){
-      if(e.key==='ArrowUp'){ menuSel=(menuSel+4)%5; updateMenu(); }
-      if(e.key==='ArrowDown'){ menuSel=(menuSel+1)%5; updateMenu(); }
+      if(e.key==='ArrowUp'){ menuSel=(menuSel+13)%14; updateMenu(); }
+      if(e.key==='ArrowDown'){ menuSel=(menuSel+1)%14; updateMenu(); }
     }
     if(inBattle){
       if(e.key==='ArrowUp'){ battleSel=(battleSel+4)%5; updateBattle(); }
