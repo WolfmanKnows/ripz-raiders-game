@@ -149,17 +149,23 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
       ],
       npcs:[
-        {x:3*TILE,y:4*TILE,name:'Note',lines:['A note: Scalpers meet in the alley.']},
+        {x:3*TILE,y:4*TILE,name:'Note',lines:['A note: Scalpers meet in the alley.']},{x:12*TILE,y:8*TILE,name:'Cave Guard',lines:['Cave is ahead. Badge required.']},
         {x:8*TILE,y:4*TILE,name:'Scalper',lines:['These packs are mine!']},{x:4*TILE,y:6*TILE,name:'Rival',lines:['I will beat you!']}
       ],
       exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE},{x:10,y:4,to:'forest',px:1*TILE,py:4*TILE},{x:14,y:6,to:'town2',px:6*TILE,py:6*TILE}]
     },
 
+    town3: {
+      w:10, h:8,
+      map:[[1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,1],[1,0,3,3,0,0,3,3,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1]],
+      npcs:[{x:5*TILE,y:4*TILE,name:'Elder',lines:['This is the far town.','Rest at the center.']}],
+      exits:[{x:5,y:6,to:'town2',px:6*TILE,py:2*TILE}]
+    },
     town2: {
       w:12, h:10,
       map:[[1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,3,3,0,0,3,3,0,0,1],[1,0,0,3,3,0,0,3,3,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1]],
       npcs:[{x:6*TILE,y:5*TILE,name:'Local',lines:['Welcome to the next town.','Gym is nearby.']}],
-      exits:[{x:6,y:8,to:'route',px:8*TILE,py:2*TILE}]
+      exits:[{x:6,y:8,to:'route',px:8*TILE,py:2*TILE},{x:10,y:4,to:'town3',px:5*TILE,py:4*TILE}]
     },
     house: {
       w:8, h:6,
@@ -435,6 +441,7 @@ if(berries>=cost){ berries-=cost; packs++; startDialog(['SWAP done. Cost '+cost+
         } else if(n.name==='Kid' && !flags.kidQuest && berries>=3){ berries-=3; packs++; flags.kidQuest=true; startDialog(['Thanks! Here is a pack.']); unlock('sidequest','Helped the Kid'); save(); }
 else if(n.name==='Rock' && !flags.smashRock){ if(party[active].moves && (party[active].moves.indexOf('Rock')>=0 || party[active].moves.indexOf('Sand')>=0)){ flags.smashRock=true; startDialog(['Smashed the rock!']); } else startDialog(['Need Rock or Ground move.']); }
 else if(n.name==='Tree' && !flags.cutTree){ if(party[active].moves && party[active].moves.indexOf('Leaf')>=0){ flags.cutTree=true; startDialog(['Used Leaf. Tree cut!']); } else startDialog(['Need a Grass move to cut.']); }
+else if(n.name==='Cave Guard' && badges<1){ startDialog(['You need a badge to enter the cave.']); return; }
 else if(n.name==='Note' && !flags.gotNote){
           flags.gotNote=true; notes++;
           startDialog(['You found the note.','Scalpers meet in the alley.']);
@@ -491,7 +498,7 @@ if(p.xp >= p.lvl*8){ beep(600,0.12);
     return false;
   }
 
-  var battleIntro = 0;
+  var battleIntro = 0, attackFlash = 0;
 function startBattle(w, isTrainer){
     battleIntro = 20;
     trainerTeam = w.team || null;
@@ -543,7 +550,7 @@ if(!pickingMove){ pickingMove=true; moveSel=0; var moves=p.moves||['Peck']; var 
       if(atkType==='ice' && Math.random()<0.2){ sleepTurns=2; battleLog.push('Frozen!'); }
       windup = 8; attackOffset = 12;
       setTimeout(function(){
-        wild.hp -= dmg; shake=6; flash=8; floatText={text:'-'+dmg, x:120, y:40, life:20};
+        wild.hp -= dmg; shake=6; flash=8; attackFlash=10; floatText={text:'-'+dmg, x:120, y:40, life:20};
         beep(280,0.07);
       }, 200);
       shake=6; beep(280,0.07);
@@ -756,7 +763,8 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     }
     drawSprite(ox+px, oy+py, '#3050b0', true, 0, 'owlie_trainer');
 
-    if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
+    if(attackFlash>0){ ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fillRect(100,30,40,40); attackFlash--; }
+if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
 if(inBattle && wild){
       ctx.fillStyle='#000d'; ctx.fillRect(0,0,w,h);
       ctx.fillStyle='#fff'; ctx.font='9px monospace';
@@ -799,7 +807,8 @@ var hud = 'Lv'+ (party[active]?party[active].lvl:1) +' · '+zone.toUpperCase()+(
     var rp = document.getElementById('resPacks'); if(rp) rp.textContent = 'P '+packs;
     var rt = document.getElementById('resTokens'); if(rt) rt.textContent = 'T '+tokens;
     var bs = document.getElementById('battleStatus');
-    if(bs){ if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
+    if(bs){ if(attackFlash>0){ ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fillRect(100,30,40,40); attackFlash--; }
+if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
 if(inBattle && wild){ bs.style.display='block'; bs.textContent = wild.name+' '+wild.hp+'/'+wild.max; } else bs.style.display='none'; }
     if(zoneTimer>0){ zoneTimer--; if(zoneTimer<=0) document.getElementById('zoneFlash').style.display='none'; }
     requestAnimationFrame(draw);
