@@ -297,13 +297,12 @@ else if(a==='quests'){
     } else if(a==='save'){ save(); startDialog(['Saved.','This session: '+steps+' steps, '+wins+' wins, '+tokens+' tokens']); closeMenu(); }
 else if(a==='travel'){ fastTravel(); closeMenu(); }
 else if(a==='pc'){
-  var box = pc.map(function(p,i){ return i+': '+p.name+' Lv'+p.lvl; });
-  if(!box.length) box=['(empty)'];
-  startDialog(box.concat(['A deposits/withdraws.']));
-  if(party.length>1){ var dep=party.pop(); pc.push(dep); startDialog(['Deposited '+dep.name+'. Box: '+pc.length]); }
-  else if(pc.length){ var w=pc.pop(); party.push(w); startDialog(['Withdrew '+w.name+'.']); }
-  else startDialog(['PC empty. Need more than 1 Owlie to deposit.']);
-  closeMenu(); save();
+  var lines = ['PC Box ('+pc.length+')'];
+  for(var i=0;i<Math.min(pc.length,5);i++) lines.push(pc[i].name+' Lv'+pc[i].lvl);
+  if(party.length>1){ var dep=party.pop(); pc.push(dep); lines.push('Deposited '+dep.name); }
+  else if(pc.length){ var w=pc.pop(); party.push(w); lines.push('Withdrew '+w.name); }
+  else lines.push('Need 2+ in party to deposit');
+  startDialog(lines); closeMenu(); save();
 } else if(a==='rival'){
   startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true);
   closeMenu();
@@ -394,11 +393,13 @@ var cost = badges>=1 ? 1 : 2;
 if(berries>=cost){ berries-=cost; packs++; startDialog(['SWAP done. Cost '+cost+' berries.']); save(); }
           else startDialog(['Need 2 berries.']);
         } else if(n.name==='Kid' && !flags.kidQuest && berries>=3){ berries-=3; packs++; flags.kidQuest=true; startDialog(['Thanks! Here is a pack.']); unlock('sidequest','Helped the Kid'); save(); }
+else if(n.name==='Tree' && !flags.cutTree){ if(party[active].moves && party[active].moves.indexOf('Leaf')>=0){ flags.cutTree=true; startDialog(['Used Leaf. Tree cut!']); } else startDialog(['Need a Grass move to cut.']); }
 else if(n.name==='Note' && !flags.gotNote){
           flags.gotNote=true; notes++;
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
-        } else if(n.name==='Gym Leader' && !flags.beatGym){ startBattle({name:'Gym Leader', species:'ember', hp:45, max:45, atk:14, def:6, moves:['Ember','Peck','Tackle']}, true); }
+        } else if(n.name==='Elite' && !flags.beatElite){ startBattle({name:'Elite', species:'phoenixowl', hp:60, max:60, atk:16, def:8, moves:['Ember','Spark','Bite'], team:2}, true); }
+else if(n.name==='Gym Leader' && !flags.beatGym){ startBattle({name:'Gym Leader', species:'ember', hp:45, max:45, atk:14, def:6, moves:['Ember','Peck','Tackle']}, true); }
 else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
 else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
 startBattle({name:'Scalper',hp:40,max:40,atk:12,def:5}, true);
@@ -494,7 +495,8 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg+effMsg); shake=4;
       if(wild.hp<=0){
-        if(wild.name==='Gym Leader'){ flags.beatGym=true; badges++; unlock('gym','Gym Badge'); }
+        if(wild.name==='Elite'){ flags.beatElite=true; badges++; unlock('elite','Elite Badge'); }
+if(wild.name==='Gym Leader'){ flags.beatGym=true; badges++; unlock('gym','Gym Badge'); }
 if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
         if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; if(!ngPlus){ ngPlus=true; startDialog(['New Game+ unlocked!']); } }
 if(wild.name==='Rival'){ rivalWins++; unlock('rival','Beat Rival'); }
