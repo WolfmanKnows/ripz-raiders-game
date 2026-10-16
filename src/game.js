@@ -17,7 +17,11 @@
   var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust'], shiny:false, held:'Berry'}];
 
   
-  var MOVES = {
+  
+  var LEARN = {
+    5: 'Gust', 8: 'Tackle', 10: 'Bite', 12: 'Ember', 15: 'Spark', 18: 'Leaf'
+  };
+var MOVES = {
     Peck:{pwr:35, type:'normal', pp:25},
     Gust:{pwr:40, type:'flying', pp:20},
     Tackle:{pwr:30, type:'normal', pp:30},
@@ -94,7 +98,7 @@
 
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
-  var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
+  var inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
   var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
@@ -393,12 +397,13 @@ var cost = badges>=1 ? 1 : 2;
 if(berries>=cost){ berries-=cost; packs++; startDialog(['SWAP done. Cost '+cost+' berries.']); save(); }
           else startDialog(['Need 2 berries.']);
         } else if(n.name==='Kid' && !flags.kidQuest && berries>=3){ berries-=3; packs++; flags.kidQuest=true; startDialog(['Thanks! Here is a pack.']); unlock('sidequest','Helped the Kid'); save(); }
+else if(n.name==='Rock' && !flags.smashRock){ if(party[active].moves && (party[active].moves.indexOf('Rock')>=0 || party[active].moves.indexOf('Sand')>=0)){ flags.smashRock=true; startDialog(['Smashed the rock!']); } else startDialog(['Need Rock or Ground move.']); }
 else if(n.name==='Tree' && !flags.cutTree){ if(party[active].moves && party[active].moves.indexOf('Leaf')>=0){ flags.cutTree=true; startDialog(['Used Leaf. Tree cut!']); } else startDialog(['Need a Grass move to cut.']); }
 else if(n.name==='Note' && !flags.gotNote){
           flags.gotNote=true; notes++;
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
-        } else if(n.name==='Elite' && !flags.beatElite){ startBattle({name:'Elite', species:'phoenixowl', hp:60, max:60, atk:16, def:8, moves:['Ember','Spark','Bite'], team:2}, true); }
+        } else if(n.name==='Elite' && !flags.beatElite){ startBattle({name:'Elite', team:[{name:'Emberowl',species:'ember',hp:40,atk:12,moves:['Ember']},{name:'Sparkowl',species:'spark',hp:38,atk:13,moves:['Spark']},{name:'Phoenixowl',species:'ember',hp:55,atk:16,moves:['Ember','Bite']}]}, true); }
 else if(n.name==='Gym Leader' && !flags.beatGym){ startBattle({name:'Gym Leader', species:'ember', hp:45, max:45, atk:14, def:6, moves:['Ember','Peck','Tackle']}, true); }
 else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
 else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
@@ -435,6 +440,13 @@ p.hp=party[active].hp;
     var evo=checkEvo(p); if(evo){ shake=12; flash=15; beep(720,0.2); startDialog([p.name+' evolved into '+evo+'!','HP '+p.max+'  ATK '+p.atk]); }
 if(p.xp >= p.lvl*8){ beep(600,0.12);
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
+        var newMove = LEARN[p.lvl];
+        if(newMove && (!p.moves || p.moves.indexOf(newMove)<0)){
+          if(!p.moves) p.moves=[];
+          if(p.moves.length<4) p.moves.push(newMove);
+          else p.moves[0]=newMove;
+          startDialog([p.name+' learned '+newMove+'!']);
+        }
       beep(600,0.12);
       return true;
     }
@@ -442,6 +454,8 @@ if(p.xp >= p.lvl*8){ beep(600,0.12);
   }
 
   function startBattle(w, isTrainer){
+    trainerTeam = w.team || null;
+    trainerIdx = 0;
     flash=20; shake=8;
     inBattle=true; wild=w||randomWild(); battleSel=0; battleLog=[];
 seen[wild.name]=true;
@@ -495,6 +509,13 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg+effMsg); shake=4;
       if(wild.hp<=0){
+        if(trainerTeam && trainerIdx < trainerTeam.length-1){
+          trainerIdx++;
+          var next = trainerTeam[trainerIdx];
+          wild = {name:next.name, species:next.species, hp:next.hp, max:next.hp, atk:next.atk, def:next.def||4, moves:next.moves||['Peck']};
+          startDialog([wild.name+' is next!']);
+          return;
+        }
         if(wild.name==='Elite'){ flags.beatElite=true; badges++; unlock('elite','Elite Badge'); }
 if(wild.name==='Gym Leader'){ flags.beatGym=true; badges++; unlock('gym','Gym Badge'); }
 if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
