@@ -1,7 +1,17 @@
 
 (function(){
   'use strict';
-  var sprites = {};
+  
+  var tiles = {};
+  var tileNames = ['grass','path','wall','tallgrass'];
+  for(var ti=0; ti<tileNames.length; ti++){
+    (function(name){
+      var img = new Image();
+      img.onload = function(){ tiles[name]=img; };
+      img.src = 'assets/tiles/'+name+'.png';
+    })(tileNames[ti]);
+  }
+var sprites = {};
   var spriteNames = ['hootling','nestling','owlie_trainer','packrat','chrome_hoot','bulkbuyer','clearout','foilghost','resale','ripper','shelfcleaner'];
   spriteNames.forEach(function(n){
     var img = new Image();
@@ -793,8 +803,10 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     for(var y=0;y<zm.h;y++){
       for(var x=0;x<zm.w;x++){
         var t=zm.map[y][x];
-        ctx.fillStyle=colors[t]||'#70c060';
-        ctx.fillRect(ox+x*TILE, oy+y*TILE, TILE, TILE);
+        if(tiles.grass && t===0) ctx.drawImage(tiles.grass, ox+x*TILE, oy+y*TILE, TILE, TILE);
+        else if(tiles.wall && t===1) ctx.drawImage(tiles.wall, ox+x*TILE, oy+y*TILE, TILE, TILE);
+        else if(tiles.tallgrass && t===3) ctx.drawImage(tiles.tallgrass, ox+x*TILE, oy+y*TILE, TILE, TILE);
+        else { ctx.fillStyle=colors[t]||'#70c060'; ctx.fillRect(ox+x*TILE, oy+y*TILE, TILE, TILE); }
         if(t===3){ ctx.fillStyle='#206020'; ctx.fillRect(ox+x*TILE+2, oy+y*TILE+2, 4, 4); }
       }
     }
