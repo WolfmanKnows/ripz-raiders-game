@@ -555,6 +555,27 @@ msgs.push('Got it!');
       else { ctx.fillStyle='#fff'; ctx.fillRect(30,15,2,2); ctx.fillRect(90,25,2,2); }
     }
   }
+  function drawMiniMap(){
+    var mm = document.getElementById('miniMap');
+    if(!mm) return;
+    var mctx = mm.getContext('2d');
+    var m = z().map;
+    if(!m) return;
+    var mw = m[0].length, mh = m.length;
+    var cell = Math.min(64/mw, 48/mh);
+    mctx.fillStyle='#000'; mctx.fillRect(0,0,64,48);
+    for(var y=0; y<mh; y++){
+      for(var x=0; x<mw; x++){
+        var t = m[y][x];
+        mctx.fillStyle = t===1?'#444':t===2?'#6a6':t===3?'#484':'#222';
+        mctx.fillRect(x*cell, y*cell, cell, cell);
+      }
+    }
+    // player
+    var pxm = Math.floor(px/TILE), pym = Math.floor(py/TILE);
+    mctx.fillStyle='#ff0';
+    mctx.fillRect(pxm*cell, pym*cell, cell, cell);
+  }
   function draw(){
     var w=canvas.width, h=canvas.height;
     drawBg(w,h);
@@ -617,6 +638,7 @@ if(false){
 var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+badges+' badges'+qmark;
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
+    drawMiniMap();
     var qt = document.getElementById('questTracker');
     if(qt){
       var qh = [];
