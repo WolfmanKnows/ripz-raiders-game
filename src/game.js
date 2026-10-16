@@ -89,8 +89,8 @@ var MOVES = {
         if(!p.species) p.species=m.id;
         if(p.stage===undefined) p.stage = m.stages.indexOf(p.name);
         if(p.stage<0) p.stage=0;
-        if(p.lvl>=6 && p.stage===0){ p.stage=1; p.name=m.stages[1]; p.max+=4; p.atk+=1; p.hp=p.max; return m.stages[1]; }
-        if(p.lvl>=12 && p.stage===1){ p.stage=2; p.name=m.stages[2]; p.max+=6; p.atk+=2; p.hp=p.max; return m.stages[2]; }
+        if(p.lvl>=6 && p.stage===0){ p.stage=1; p.name=m.stages[1]; p.max+=4; p.atk+=1; p.hp=p.max; if(!p.moves) p.moves=[]; if(p.moves.indexOf('Gust')<0) p.moves.push('Gust'); return m.stages[1]; }
+        if(p.lvl>=12 && p.stage===1){ p.stage=2; p.name=m.stages[2]; p.max+=6; p.atk+=2; p.hp=p.max; if(!p.moves) p.moves=[]; var evoMove = TYPES[m.id]==='fire'?'Ember':TYPES[m.id]==='electric'?'Spark':TYPES[m.id]==='grass'?'Leaf':'Bite'; if(p.moves.indexOf(evoMove)<0) p.moves.push(evoMove); return m.stages[2]; }
       }
     }
     return null;
@@ -287,7 +287,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
       lines.push('Seen: '+Object.keys(seen).length); lines.push('Tap again to cycle lead.');
       startDialog(lines); closeMenu();
     } else if(a==='reorder'){ if(party.length>1){ var lead=party.shift(); party.push(lead); active=0; startDialog(['Lead is now '+party[0].name+'.']); } else startDialog(['Only one Owlie.']); closeMenu(); }
-else if(a==='equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry on '+party[active].name+'.']); } else startDialog(['No berries.']); closeMenu(); }
+else if(a==='equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry.']); } else if(tokens>=10){ tokens-=10; party[active].held='Focus'; startDialog(['Equipped Focus (ATK).']); } else startDialog(['Need berries or 10 tokens.']); closeMenu(); }
 else if(a==='items'){
       startDialog(['Berries: '+berries+' (heal)','Packs: '+packs+' (open for bonus)','ETBs: '+etbs]);
       closeMenu();
@@ -404,6 +404,7 @@ else if(n.name==='Note' && !flags.gotNote){
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
         } else if(n.name==='Elite' && !flags.beatElite){ startBattle({name:'Elite', team:[{name:'Emberowl',species:'ember',hp:40,atk:12,moves:['Ember']},{name:'Sparkowl',species:'spark',hp:38,atk:13,moves:['Spark']},{name:'Phoenixowl',species:'ember',hp:55,atk:16,moves:['Ember','Bite']}]}, true); }
+else if(n.name==='Gym2' && !flags.beatGym2){ startBattle({name:'Gym2', team:[{name:'Frostowl',species:'frost',hp:42,atk:11,moves:['Ice']},{name:'Glacier',species:'frost',hp:50,atk:13,moves:['Ice','Gust']}]}, true); }
 else if(n.name==='Gym Leader' && !flags.beatGym){ startBattle({name:'Gym Leader', species:'ember', hp:45, max:45, atk:14, def:6, moves:['Ember','Peck','Tackle']}, true); }
 else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
 else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
@@ -517,6 +518,7 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
           return;
         }
         if(wild.name==='Elite'){ flags.beatElite=true; badges++; unlock('elite','Elite Badge'); }
+if(wild.name==='Gym2'){ flags.beatGym2=true; badges++; unlock('gym2','Ice Badge'); }
 if(wild.name==='Gym Leader'){ flags.beatGym=true; badges++; unlock('gym','Gym Badge'); }
 if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
         if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; if(!ngPlus){ ngPlus=true; startDialog(['New Game+ unlocked!']); } }
@@ -529,7 +531,9 @@ var back = Math.max(1, wild.atk - Math.floor(p.def/3));
       p.hp -= back; shake=4;
       battleLog.push('Took '+back);
       if(p.hp<=0){ p.hp=1; startDialog(['Your Owlie is tired.']); endBattle(false,false); return; }
-if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p.hp+10); p.held=null; battleLog.push('Held Berry!'); } }
+if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p.hp+10); p.held=null; battleLog.push('Held Berry!'); }
+        else if(p.held==='Focus'){ p.atk+=2; p.held=null; battleLog.push('Focus boost!'); }
+        else if(p.held==='Shield'){ p.def+=2; p.held=null; battleLog.push('Shield up!'); } }
       startDialog(['Hit for '+dmg+'!','Enemy hit for '+back+'.']);
     } else if(a==='item'){
 if(berries>=1 && p.hp<p.max){ berries--; p.hp=Math.min(p.max, p.hp+15); startDialog(['Berry used. +15 HP']); return; }
