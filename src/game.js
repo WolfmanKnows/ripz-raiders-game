@@ -264,7 +264,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
   function openMenu(){
     menuOpen=true; menuSel=0;
     var menu = document.getElementById('menu');
-    var labels = ['Party','Reorder Lead','Equip Berry','Evo Stone','Items','Dex','Quests','Save','Fast Travel','PC Box','Rival','Settings','Card Flip','Reset','Close'];
+    var labels = ['Resume','Party','Save','Settings','Quests','PC Box','Fast Travel','Reset','Close'];
     menu.innerHTML = labels.map(function(l){ return '<div>'+l+'</div>'; }).join('');
     menu.style.display='block';
     updateMenu();
@@ -280,7 +280,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','reorder','stone','equip','items','dex','quests','save','travel','pc','rival','settings','minigame','reset','close'];
+    var acts=['resume','party','save','settings','quests','pc','travel','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
