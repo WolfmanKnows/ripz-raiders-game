@@ -672,6 +672,8 @@ msgs.push('Got it!');
       ctx.fillRect(0,0,w,h*0.6);
       ctx.fillStyle = dayPhase ? '#1a2a1a' : '#88c070';
       ctx.fillRect(0,h*0.6,w,h*0.4);
+      ctx.fillStyle = dayPhase ? '#0a1a0a' : '#6aaa50';
+      ctx.fillRect(0,h*0.75,w,h*0.25);
       if(!dayPhase){ ctx.fillStyle='#fff'; ctx.fillRect(20,12,16,6); ctx.fillRect(80,20,12,4); }
       else { ctx.fillStyle='#fff'; ctx.fillRect(30,15,2,2); ctx.fillRect(90,25,2,2); }
     }
@@ -801,14 +803,22 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     if(attackFlash>0){ ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fillRect(100,30,40,40); attackFlash--; }
 if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
 if(inBattle && wild){
-      ctx.fillStyle='#000d'; ctx.fillRect(0,0,w,h);
-      ctx.fillStyle='#fff'; ctx.font='9px monospace';
-      ctx.fillText(wild.name, 90, 18);
-      drawBar(90,22,60,6, Math.max(0,wild.hp), wild.max, '#e04040');
-      ctx.fillText(party[active].name+' Lv'+party[active].lvl, 8, 100);
-      drawBar(8,104,70,6, party[active].hp, party[active].max, '#40c040');
-      drawSprite(110, 36, wild.color||'#c05040', true, wild.stage, wild.species||'hootling');
-      drawSprite(16+attackOffset, 60, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage, (party[active]&&party[active].species)||'hootling');
+      // battle bg
+      ctx.fillStyle='#1a3a1a'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#2a5a2a'; ctx.fillRect(0,h*0.55,w,h*0.45);
+      ctx.fillStyle='#87ceeb'; ctx.fillRect(0,0,w,h*0.35);
+      // platforms
+      ctx.fillStyle='#4a6a3a'; ctx.beginPath(); ctx.ellipse(40,85,30,8,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#5a7a4a'; ctx.beginPath(); ctx.ellipse(120,50,28,7,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='8px sans-serif';
+      ctx.fillText(wild.name, 90, 14);
+      ctx.fillStyle='#000'; ctx.fillRect(88,16,64,8);
+      drawBar(90,18,60,5, Math.max(0,wild.hp), wild.max, '#e04040');
+      ctx.fillStyle='#fff'; ctx.fillText(party[active].name+' Lv'+party[active].lvl, 6, 96);
+      ctx.fillStyle='#000'; ctx.fillRect(4,98,74,8);
+      drawBar(6,100,70,5, party[active].hp, party[active].max, '#40c040');
+      drawSprite(110, 30, wild.color||'#c05040', true, wild.stage, wild.species||'hootling');
+      drawSprite(16+attackOffset, 55, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage, (party[active]&&party[active].species)||'hootling');
       if(pickingMove){
       var ms = party[active].moves || ['Peck','Gust','Tackle'];
       var hints = {Peck:'normal', Gust:'strong', Tackle:'steady'};
