@@ -191,7 +191,9 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     }catch(e){}
   }
 
+  var fadeAlpha = 0;
   function flashZone(name){
+    fadeAlpha = 1;
     var el = document.getElementById('zoneFlash');
     el.textContent = name.toUpperCase();
     el.style.display = 'block';
@@ -483,6 +485,7 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
       ctx.fillRect(x+4,y+6,2,2); ctx.fillRect(x+9,y+6,2,2);
     }
     if(frame%2 && eyes){ ctx.fillStyle=body; ctx.fillRect(x,y+TILE-4,3,2); ctx.fillRect(x+TILE-5,y+TILE-4,3,2); }
+if(eyes){ var bob = (frame%4<2)?0:1; y+=bob; }
   }
 
   function draw(){
@@ -490,6 +493,7 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
     ctx.save();
     if(shake>0){ ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
     ctx.fillStyle=dayPhase?'#0a0a20':'#000'; ctx.fillRect(0,0,w,h);
+if(fadeAlpha>0){ ctx.fillStyle='rgba(0,0,0,'+fadeAlpha+')'; ctx.fillRect(0,0,w,h); fadeAlpha=Math.max(0,fadeAlpha-0.05); }
 if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     var zm=z();
     var ox=Math.floor((w - zm.w*TILE)/2);
@@ -535,7 +539,7 @@ if(battleLog.length){
     if(fade>0){ ctx.fillStyle='rgba(0,0,0,'+(fade/10)+')'; ctx.fillRect(0,0,w,h); }
     ctx.restore();
 
-    var qmark = !flags.gotNote?' [Note]':!flags.beatScalper?' [Scalper]':!flags.kidQuest?' [Kid]':'';
+    var qmark = !flags.gotNote?' →Note':!flags.beatScalper?' →Scalper':!flags.kidQuest?' →Kid':'';
 var hud = 'S'+score+' B'+badges+' W'+wins+' St'+steps+' '+zone+qmark+(dayPhase?' Night':'');
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
@@ -621,7 +625,7 @@ setInterval(function(){
     var tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
     if(tileAt(tx,ty)===3){
       grassTicks++;
-      if(grassTicks>5 && Math.random()<0.2){ grassTicks=0; startBattle(); }
+      if(grassTicks>4 && Math.random()<0.18){ grassTicks=0; startBattle(); }
     } else grassTicks=0;
   }, 320);
 
