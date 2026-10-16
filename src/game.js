@@ -617,6 +617,14 @@ if(false){
 var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+badges+' badges'+qmark;
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
+    var qt = document.getElementById('questTracker');
+    if(qt){
+      var qh = [];
+      qh.push(flags.gotNote ? '<span class="done">Note ✓</span>' : 'Find Note');
+      qh.push(flags.beatScalper ? '<span class="done">Scalper ✓</span>' : 'Beat Scalper');
+      qh.push(flags.kidQuest ? '<span class="done">Kid ✓</span>' : 'Help Kid');
+      qt.innerHTML = qh.join('<br>');
+    }
     var rb = document.getElementById('resBerries'); if(rb) rb.textContent = 'B '+berries;
     var rp = document.getElementById('resPacks'); if(rp) rp.textContent = 'P '+packs;
     var rt = document.getElementById('resTokens'); if(rt) rt.textContent = 'T '+tokens;
