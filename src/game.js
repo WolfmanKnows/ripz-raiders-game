@@ -56,7 +56,7 @@
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
   var inBattle = false, wild = null, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
-  var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0;
+  var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
   var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
   var zones = {
@@ -337,7 +337,7 @@ else if(pull < 0.25){ berries+=4; msg = 'Berry burst! +4'; }
             else if(pull < 0.35){ tokens += 6; msg = 'Token pull! +6'; }
             else if(pull < 0.55){ berries += 2; tokens += 2; msg = 'Mixed pull. +2 berries, +2 tokens'; }
             else { berries += 1; msg = 'Common pull. +1 berry'; }
-            startDialog([msg, 'Packs left: '+packs]);
+            flash=10; shake=4; startDialog([msg, 'Packs left: '+packs]);
             save();
           } else if(tokens >= 5){
             tokens -= 5;
@@ -391,7 +391,7 @@ p.hp=party[active].hp;
   function gainXP(amount){
     var p=party[active];
     p.xp += amount;
-    var evo=checkEvo(p); if(evo){ shake=10; beep(720,0.2); startDialog([p.name+' evolved into '+evo+'!','HP '+p.max+'  ATK '+p.atk]); }
+    var evo=checkEvo(p); if(evo){ shake=12; flash=15; beep(720,0.2); startDialog([p.name+' evolved into '+evo+'!','HP '+p.max+'  ATK '+p.atk]); }
 if(p.xp >= p.lvl*8){ beep(600,0.12);
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
       beep(600,0.12);
@@ -441,7 +441,7 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
       battleLog.push(move+'!');
 if(Math.random()<0.12){ burnTurns=2; battleLog.push('Burned!'); }
 if(Math.random()<0.08){ sleepTurns=1; battleLog.push('Slept!'); }
-      wild.hp -= dmg; shake=5;
+      wild.hp -= dmg; shake=6; flash=8; floatText={text:'-'+dmg, x:120, y:40, life:20};
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg); shake=4;
       if(wild.hp<=0){
@@ -469,7 +469,8 @@ var odds = Math.round((0.25 + (1 - wild.hp/wild.max)*0.55)*100);
       var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
       var shakes = Math.random() < chance ? 3 : Math.floor(Math.random()*3);
       var msgs = [];
-      for(var s=0; s<shakes; s++) msgs.push('...');
+      for(var s=0; s<shakes; s++){ msgs.push('...'); shake=3; }
+flash=6;
       if(shakes===3 && party.length<5){
         var isShiny = Math.random()<shinyOdds;
         party.push({name:wild.name, species:wild.species, stage:wild.stage||0, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:wild.def||3, lvl:4, xp:0, moves:wild.moves||['Peck','Gust','Tackle'], shiny:isShiny, held:null, color:wild.color});
@@ -510,7 +511,7 @@ msgs.push('Got it!');
       ctx.fillRect(x+4,y+6,2,2); ctx.fillRect(x+9,y+6,2,2);
     }
     if(frame%2 && eyes){ ctx.fillStyle=body; ctx.fillRect(x,y+TILE-4,3,2); ctx.fillRect(x+TILE-5,y+TILE-4,3,2); }
-if(eyes){ var bob = (frame%4<2)?0:1; y+=bob; }
+if(eyes){ var bob = (frame%6<3)?0:2; y+=bob; }
   }
 
   function draw(){
@@ -519,6 +520,8 @@ if(eyes){ var bob = (frame%4<2)?0:1; y+=bob; }
     if(shake>0){ ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
     if(dayPhase){ ctx.fillStyle='rgba(10,10,40,0.35)'; ctx.fillRect(0,0,w,h); }
 if(fadeAlpha>0){ ctx.fillStyle='rgba(0,0,0,'+fadeAlpha+')'; ctx.fillRect(0,0,w,h); fadeAlpha=Math.max(0,fadeAlpha-0.05); }
+    if(flash>0){ ctx.fillStyle='rgba(255,255,255,'+(flash/15)+')'; ctx.fillRect(0,0,w,h); flash--; }
+    if(floatText){ ctx.fillStyle='#ff0'; ctx.font='10px monospace'; ctx.fillText(floatText.text, floatText.x, floatText.y); floatText.y-=1; floatText.life--; if(floatText.life<=0) floatText=null; }
 if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     var zm=z();
     var ox=Math.floor((w - zm.w*TILE)/2);
