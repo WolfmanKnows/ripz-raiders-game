@@ -199,7 +199,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
 
   var fadeAlpha = 0;
   function flashZone(name){
-    fadeAlpha = 1;
+    fadeAlpha = 1; flash=8;
     var el = document.getElementById('zoneFlash');
     el.textContent = name.toUpperCase();
     el.style.display = 'block';
@@ -401,6 +401,7 @@ if(p.xp >= p.lvl*8){ beep(600,0.12);
   }
 
   function startBattle(w, isTrainer){
+    flash=20; shake=8;
     inBattle=true; wild=w||randomWild(); battleSel=0; battleLog=[];
 seen[wild.name]=true;
     document.getElementById('battleMenu').style.display='block';
@@ -499,10 +500,11 @@ msgs.push('Got it!');
   }
 
   function drawSprite(x,y,body,eyes,stage){
+    var f = Math.floor(frame/4)%2;
     stage = stage||0;
     ctx.fillStyle=body;
     ctx.fillRect(x+1,y+1,TILE-4,TILE-4);
-    if(stage>=1){ ctx.fillStyle='#fff'; ctx.fillRect(x+2,y+2,3,2); }
+    if(stage>=1){ ctx.fillStyle='#fff'; ctx.fillRect(x+(f?2:10),y+2,3,2); }
     if(stage>=2){ ctx.fillStyle='#ff0'; ctx.fillRect(x+10,y+2,3,2); }
     if(eyes){
       ctx.fillStyle='#fff';
@@ -511,7 +513,8 @@ msgs.push('Got it!');
       ctx.fillRect(x+4,y+6,2,2); ctx.fillRect(x+9,y+6,2,2);
     }
     if(frame%2 && eyes){ ctx.fillStyle=body; ctx.fillRect(x,y+TILE-4,3,2); ctx.fillRect(x+TILE-5,y+TILE-4,3,2); }
-if(eyes){ var bob = (frame%6<3)?0:2; y+=bob; }
+if(eyes){ var bob = (frame%8<4)?0:2; y+=bob; }
+if(!eyes && frame%12<6) y+=1;
   }
 
   function draw(){
