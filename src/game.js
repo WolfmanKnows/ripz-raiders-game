@@ -100,7 +100,7 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
   var MART = [{name:'Berry',cost:1,type:'berry'},{name:'Pack',cost:2,type:'pack'},{name:'Focus',cost:10,type:'focus'}];
 var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
-  var titleScreen = true, partyScreen = false, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
+  var loading = true, loadProgress = 0, introPlaying = false, introFrame = 0, titleScreen = true, partyScreen = false, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
   var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
@@ -697,7 +697,35 @@ msgs.push('Got it!');
     mctx.fillRect(pxm*cell, pym*cell, cell, cell);
   }
   
-  function drawTitle(){
+  
+  function drawLoading(){
+    var w=canvas.width, h=canvas.height;
+    ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#c9a227'; ctx.font='12px monospace'; ctx.textAlign='center';
+    ctx.fillText('RIPZ RAIDERS', w/2, h/2-20);
+    ctx.fillStyle='#fff'; ctx.font='8px monospace';
+    ctx.fillText('Loading...', w/2, h/2);
+    ctx.fillStyle='#333'; ctx.fillRect(w/2-40, h/2+15, 80, 6);
+    ctx.fillStyle='#c9a227'; ctx.fillRect(w/2-40, h/2+15, loadProgress*0.8, 6);
+    ctx.textAlign='left';
+  }
+  function drawIntro(){
+    var w=canvas.width, h=canvas.height;
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h);
+    var t = introFrame;
+    ctx.fillStyle='#c9a227'; ctx.font='14px monospace'; ctx.textAlign='center';
+    if(t<30) ctx.fillText('ohhTCG', w/2, h/2);
+    else if(t<60) ctx.fillText('presents', w/2, h/2);
+    else if(t<90) ctx.fillText('RIPZ RAIDERS', w/2, h/2-10);
+    else { ctx.fillText('TAKE YOUR SHOT!', w/2, h/2); }
+    ctx.fillStyle='#888'; ctx.font='6px monospace';
+    ctx.fillText('A to skip', w/2, h-15);
+    ctx.textAlign='left';
+    introFrame++;
+    if(introFrame>120){ introPlaying=false; titleScreen=true; }
+  }
+
+function drawTitle(){
     var w=canvas.width, h=canvas.height;
     ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,w,h);
     ctx.fillStyle='#c9a227'; ctx.font='14px monospace'; ctx.textAlign='center';
@@ -732,7 +760,9 @@ msgs.push('Got it!');
   }
 
 function draw(){
-    if(titleScreen){ drawTitle(); return; }
+    if(loading){ drawLoading(); loadProgress=Math.min(100,loadProgress+2); if(loadProgress>=100){ loading=false; introPlaying=true; } return; }
+if(introPlaying){ drawIntro(); return; }
+if(titleScreen){ drawTitle(); return; }
 if(partyScreen){ drawParty(); return; }
     var w=canvas.width, h=canvas.height;
     drawBg(w,h);
@@ -829,7 +859,8 @@ if(inBattle && wild){ bs.style.display='block'; bs.textContent = wild.name+' '+w
   window.addEventListener('keydown', function(e){
     keys[e.key]=true;
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); interact(); }
-    if(titleScreen){ if(e.key==='a'||e.key==='A'||e.key==='Enter'){ titleScreen=false; startDialog(['Welcome, Owlie.','Walk into tall grass to find creatures.','A confirms, B cancels.']); } else if(e.key==='b'||e.key==='B'){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); } return; }
+    if(introPlaying && (e.key==='a'||e.key==='A'||e.key==='Enter')){ introPlaying=false; titleScreen=true; return; }
+if(titleScreen){ if(e.key==='a'||e.key==='A'||e.key==='Enter'){ titleScreen=false; startDialog(['Welcome, Owlie.','Walk into tall grass to find creatures.','A confirms, B cancels.']); } else if(e.key==='b'||e.key==='B'){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); } return; }
 if(partyScreen && (e.key==='b'||e.key==='B'||e.key==='Escape')){ partyScreen=false; return; }
 if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) openMenu(); }
     if(e.key==='n'){ mute=!mute; startDialog([mute?'Muted.':'Sound on.']); }
