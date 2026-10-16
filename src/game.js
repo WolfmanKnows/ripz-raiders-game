@@ -228,7 +228,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
   function openMenu(){
     menuOpen=true; menuSel=0;
     var menu = document.getElementById('menu');
-    var labels = ['Party','Reorder','Equip','Items','Dex','Quests','Save','Travel','PC','Rival','Settings','Card Flip','Reset','Close'];
+    var labels = ['Party','Reorder Lead','Equip Berry','Items','Dex','Quests','Save','Fast Travel','PC Box','Rival','Settings','Card Flip','Reset','Close'];
     menu.innerHTML = labels.map(function(l){ return '<div>'+l+'</div>'; }).join('');
     menu.style.display='block';
     updateMenu();
@@ -614,7 +614,7 @@ if(false){
     ctx.restore();
 
     var qmark = !flags.gotNote?' →Note':!flags.beatScalper?' →Scalper':!flags.kidQuest?' →Kid':'';
-var hud = 'S'+score+' B'+badges+' W'+wins+' St'+steps+' '+zone+qmark+(dayPhase?' Night':'');
+var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+badges+' badges'+qmark;
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
     if(zoneTimer>0){ zoneTimer--; if(zoneTimer<=0) document.getElementById('zoneFlash').style.display='none'; }
