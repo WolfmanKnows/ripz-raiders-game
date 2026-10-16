@@ -275,7 +275,7 @@ else if(a==='pc'){
 } else if(a==='rival'){
   startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true);
   closeMenu();
-} else if(a==='settings'){ mute=!mute; textSpeed = textSpeed===1?2:1; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'Party: '+party.length+'/5','NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
+} else if(a==='settings'){ mute=!mute; textSpeed = textSpeed===1?2:1; dayPhase = dayPhase?0:1; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'Party: '+party.length+'/5','Mode: '+(dayPhase?'Night':'Day'),'NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
     else if(a==='minigame'){ var r=Math.random()<0.5; if(r){ berries++; startDialog(['Card flip: win! +1 berry.']); } else startDialog(['Card flip: lose.']); closeMenu(); }
 else if(a==='reset'){ if(confirm('Reset all progress?')){ localStorage.removeItem('ripz_save'); location.reload(); } closeMenu(); }
 else closeMenu();
@@ -530,11 +530,11 @@ msgs.push('Got it!');
   function drawBg(w,h){
     var z = zone || 'plaza';
     if(z==='shop'){
-      ctx.fillStyle='#c8b8a0'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle=dayPhase?'#4a4030':'#c8b8a0'; ctx.fillRect(0,0,w,h);
       ctx.fillStyle='#a09080'; ctx.fillRect(0,h*0.7,w,h*0.3);
       ctx.fillStyle='#fff'; ctx.fillRect(10,10,30,20); ctx.fillRect(50,10,30,20);
     } else if(z==='forest'){
-      ctx.fillStyle='#2a4a2a'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle=dayPhase?'#0a1a0a':'#2a4a2a'; ctx.fillRect(0,0,w,h);
       ctx.fillStyle='#1a3a1a'; ctx.fillRect(0,h*0.6,w,h*0.4);
       ctx.fillStyle='#0a2a0a'; ctx.fillRect(20,20,8,30); ctx.fillRect(100,15,8,35);
     } else if(z==='rooftop'){
@@ -542,7 +542,7 @@ msgs.push('Got it!');
       ctx.fillStyle='#555'; ctx.fillRect(0,h*0.75,w,h*0.25);
       ctx.fillStyle='#fff'; if(!dayPhase) ctx.fillRect(30,15,2,2);
     } else if(z==='alley'){
-      ctx.fillStyle='#3a3a3a'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle=dayPhase?'#1a1a1a':'#3a3a3a'; ctx.fillRect(0,0,w,h);
       ctx.fillStyle='#2a2a2a'; ctx.fillRect(0,h*0.65,w,h*0.35);
       ctx.fillStyle='#555'; ctx.fillRect(10,30,6,40); ctx.fillRect(120,25,6,45);
     } else {
@@ -560,7 +560,7 @@ msgs.push('Got it!');
     drawBg(w,h);
     ctx.save();
     if(shake>0){ ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
-    if(dayPhase){ ctx.fillStyle='rgba(10,10,40,0.35)'; ctx.fillRect(0,0,w,h); }
+    if(dayPhase){ ctx.fillStyle='rgba(5,5,30,0.55)'; ctx.fillRect(0,0,w,h); }
 if(fadeAlpha>0){ ctx.fillStyle='rgba(0,0,0,'+fadeAlpha+')'; ctx.fillRect(0,0,w,h); fadeAlpha=Math.max(0,fadeAlpha-0.05); }
     if(flash>0){ ctx.fillStyle='rgba(255,255,255,'+(flash/15)+')'; ctx.fillRect(0,0,w,h); flash--; }
     if(floatText){ ctx.fillStyle='#ff0'; ctx.font='10px monospace'; ctx.fillText(floatText.text, floatText.x, floatText.y); floatText.y-=1; floatText.life--; if(floatText.life<=0) floatText=null; }
