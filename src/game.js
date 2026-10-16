@@ -528,19 +528,31 @@ msgs.push('Got it!');
   }
 
   function drawBg(w,h){
-    // sky
-    ctx.fillStyle = dayPhase ? '#1a1a3a' : '#87ceeb';
-    ctx.fillRect(0,0,w,h*0.6);
-    // ground
-    ctx.fillStyle = dayPhase ? '#1a2a1a' : '#88c070';
-    ctx.fillRect(0,h*0.6,w,h*0.4);
-    // simple clouds or stars
-    if(!dayPhase){
-      ctx.fillStyle='#fff';
-      ctx.fillRect(20,12,16,6); ctx.fillRect(80,20,12,4);
+    var z = zone || 'plaza';
+    if(z==='shop'){
+      ctx.fillStyle='#c8b8a0'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#a09080'; ctx.fillRect(0,h*0.7,w,h*0.3);
+      ctx.fillStyle='#fff'; ctx.fillRect(10,10,30,20); ctx.fillRect(50,10,30,20);
+    } else if(z==='forest'){
+      ctx.fillStyle='#2a4a2a'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#1a3a1a'; ctx.fillRect(0,h*0.6,w,h*0.4);
+      ctx.fillStyle='#0a2a0a'; ctx.fillRect(20,20,8,30); ctx.fillRect(100,15,8,35);
+    } else if(z==='rooftop'){
+      ctx.fillStyle=dayPhase?'#0a0a20':'#6ab0e0'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#555'; ctx.fillRect(0,h*0.75,w,h*0.25);
+      ctx.fillStyle='#fff'; if(!dayPhase) ctx.fillRect(30,15,2,2);
+    } else if(z==='alley'){
+      ctx.fillStyle='#3a3a3a'; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='#2a2a2a'; ctx.fillRect(0,h*0.65,w,h*0.35);
+      ctx.fillStyle='#555'; ctx.fillRect(10,30,6,40); ctx.fillRect(120,25,6,45);
     } else {
-      ctx.fillStyle='#fff';
-      ctx.fillRect(30,15,2,2); ctx.fillRect(90,25,2,2); ctx.fillRect(50,10,1,1);
+      // plaza / route
+      ctx.fillStyle = dayPhase ? '#1a1a3a' : '#87ceeb';
+      ctx.fillRect(0,0,w,h*0.6);
+      ctx.fillStyle = dayPhase ? '#1a2a1a' : '#88c070';
+      ctx.fillRect(0,h*0.6,w,h*0.4);
+      if(!dayPhase){ ctx.fillStyle='#fff'; ctx.fillRect(20,12,16,6); ctx.fillRect(80,20,12,4); }
+      else { ctx.fillStyle='#fff'; ctx.fillRect(30,15,2,2); ctx.fillRect(90,25,2,2); }
     }
   }
   function draw(){
