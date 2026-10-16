@@ -667,15 +667,21 @@ msgs.push('Got it!');
       ctx.fillStyle='#2a2a2a'; ctx.fillRect(0,h*0.65,w,h*0.35);
       ctx.fillStyle='#555'; ctx.fillRect(10,30,6,40); ctx.fillRect(120,25,6,45);
     } else {
-      // plaza / route
-      ctx.fillStyle = dayPhase ? '#1a1a3a' : '#87ceeb';
-      ctx.fillRect(0,0,w,h*0.6);
-      ctx.fillStyle = dayPhase ? '#1a2a1a' : '#88c070';
-      ctx.fillRect(0,h*0.6,w,h*0.4);
-      ctx.fillStyle = dayPhase ? '#0a1a0a' : '#6aaa50';
-      ctx.fillRect(0,h*0.75,w,h*0.25);
-      if(!dayPhase){ ctx.fillStyle='#fff'; ctx.fillRect(20,12,16,6); ctx.fillRect(80,20,12,4); }
-      else { ctx.fillStyle='#fff'; ctx.fillRect(30,15,2,2); ctx.fillRect(90,25,2,2); }
+      // sky gradient
+      var grd = ctx.createLinearGradient(0,0,0,h*0.55);
+      grd.addColorStop(0, dayPhase?'#0a0a2a':'#4a90d9');
+      grd.addColorStop(1, dayPhase?'#1a1a4a':'#87ceeb');
+      ctx.fillStyle = grd; ctx.fillRect(0,0,w,h*0.55);
+      // sun/moon
+      ctx.fillStyle = dayPhase?'#e0e0ff':'#ffe060';
+      ctx.beginPath(); ctx.arc(dayPhase?30:120, dayPhase?20:25, dayPhase?6:10, 0, Math.PI*2); ctx.fill();
+      // clouds
+      if(!dayPhase){ ctx.fillStyle='#fff'; ctx.fillRect(15,18,20,6); ctx.fillRect(18,15,14,4); ctx.fillRect(70,28,16,5); }
+      // ground layers
+      ctx.fillStyle = dayPhase?'#1a2a1a':'#7ec850'; ctx.fillRect(0,h*0.55,w,h*0.45);
+      ctx.fillStyle = dayPhase?'#0a1a0a':'#5aaa40'; ctx.fillRect(0,h*0.7,w,h*0.3);
+      // path
+      ctx.fillStyle = dayPhase?'#2a2a1a':'#c4a060'; ctx.fillRect(w*0.35,h*0.55,w*0.3,h*0.45);
     }
   }
   function drawMiniMap(){
@@ -804,11 +810,11 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
 if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
 if(inBattle && wild){
       // battle bg
-      ctx.fillStyle='#1a3a1a'; ctx.fillRect(0,0,w,h);
-      ctx.fillStyle='#2a5a2a'; ctx.fillRect(0,h*0.55,w,h*0.45);
-      ctx.fillStyle='#87ceeb'; ctx.fillRect(0,0,w,h*0.35);
+      var bg=ctx.createLinearGradient(0,0,0,h); bg.addColorStop(0,'#4a90d9'); bg.addColorStop(0.4,'#87ceeb'); bg.addColorStop(0.55,'#7ec850'); bg.addColorStop(1,'#5aaa40');
+      ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
       // platforms
-      ctx.fillStyle='#4a6a3a'; ctx.beginPath(); ctx.ellipse(40,85,30,8,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#3a5a2a'; ctx.beginPath(); ctx.ellipse(40,85,32,10,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#5a8a4a'; ctx.beginPath(); ctx.ellipse(40,85,28,6,0,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='#5a7a4a'; ctx.beginPath(); ctx.ellipse(120,50,28,7,0,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='#fff'; ctx.font='8px sans-serif';
       ctx.fillText(wild.name, 90, 14);
