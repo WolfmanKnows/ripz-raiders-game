@@ -72,6 +72,7 @@ var MOVES = {
     shop: ['frost'], forest: ['moss','elderowl','canopy'], rooftop: ['canopy','elderowl','screech'], cave: ['pebble','frost','screech'], plaza_night: ['screech','frost','ember'], route_night: ['screech','spark','dune']
   };
   function randomWild(){
+    seen[zone] = (seen[zone]||0)+1;
     var pool = ZONE_WILDS[zone] || ZONE_WILDS.plaza;
 if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
     var id = pool[Math.floor(Math.random()*pool.length)];
@@ -305,7 +306,7 @@ function save(slot){ slot=slot||1; try{ localStorage.setItem('ripz_save_'+slot, 
   function openMenu(){
     menuOpen=true; menuSel=0;
     var menu = document.getElementById('menu');
-    var labels = ['Resume','Party','Summary','Save','Settings','Quests','PC Box','Fast Travel','Reset','Close'];
+    var labels = ['Resume','Party','Summary','Dex','Save','Settings','Quests','PC Box','Fast Travel','Reset','Close'];
     menu.innerHTML = labels.map(function(l){ return '<div>'+l+'</div>'; }).join('');
     menu.style.display='block';
     updateMenu();
@@ -321,7 +322,7 @@ function save(slot){ slot=slot||1; try{ localStorage.setItem('ripz_save_'+slot, 
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['resume','party','summary','save','settings','quests','pc','travel','reset','close'];
+    var acts=['resume','party','summary','dex','save','settings','quests','pc','travel','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
@@ -333,7 +334,7 @@ else if(a==='stone','equip'){ if(berries>=1){ party[active].held='Berry'; berrie
 else if(a==='items'){
       startDialog(['Berries: '+berries+' (heal)','Packs: '+packs+' (open for bonus)','ETBs: '+etbs]);
       closeMenu();
-    } else if(a==='dex'){ var lines=MONSTERS.map(function(m){ return (seen[m.stages[0]]?'*':'')+m.stages[0]+'/'+m.stages[1]+'/'+m.stages[2]; }); startDialog(lines.slice(0,6)); closeMenu(); }
+    } else if(a==='dex'){ var caught=0; var lines=['DEX']; for(var i=0;i<MONSTERS.length;i++){ var m=MONSTERS[i]; var got=party.some(function(p){return p.species===m.id;})||pc.some(function(p){return p.species===m.id;}); if(got) caught++; lines.push((got?'*':'')+m.stages[0]+'/'+m.stages[2]); } lines.push('Caught: '+caught+'/'+MONSTERS.length); startDialog(lines.slice(0,8)); closeMenu(); }
 else if(a==='quests'){
       var q = [];
       q.push(flags.gotNote ? 'Note: found' : 'Note: find on route');
