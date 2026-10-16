@@ -53,7 +53,7 @@ var MOVES = {
   };
 
   var MONSTERS = [
-    {id:'hootling', stages:['Hootling','Owlet','Owlie'], baseHp:22, baseAtk:9, color:'#4060c0'},
+    {id:'hootling', stages:['Hootling','Owlet','Greatowl'], baseHp:22, baseAtk:9, color:'#4060c0'},
     {id:'packrat', stages:['Packrat','Hoarder','Vaultlord'], baseHp:20, baseAtk:8, color:'#c06040'},
     {id:'foilpup', stages:['Foilpup','Shimmer','Gleamowl'], baseHp:18, baseAtk:10, color:'#e0c040'},
     {id:'nestling', stages:['Nestling','Branchowl','Canopy'], baseHp:24, baseAtk:7, color:'#60a060'},
@@ -167,13 +167,13 @@ var MOVES = {
     rooftop: {
       w:8, h:6,
       map:[[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,3,3,3,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
-      npcs:[{x:3*TILE,y:2*TILE,name:'Lookout',lines:['High up. Rare views and rare Owlies.']}],
+      npcs:[{x:3*TILE,y:2*TILE,name:'Lookout',lines:['High up. Rare views and rare creatures.']}],
       exits:[{x:1,y:3,to:'plaza',px:10*TILE,py:5*TILE}]
     },
     forest: {
       w:10, h:8,
       map:[[1,1,1,1,1,1,1,1,1,1],[1,0,0,3,3,3,0,0,0,1],[1,0,0,3,3,3,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1]],
-      npcs:[{x:5*TILE,y:4*TILE,name:'Ranger',lines:['Deep woods. Rare Owlies here.']}],
+      npcs:[{x:5*TILE,y:4*TILE,name:'Ranger',lines:['Deep woods. Rare creatures here.']}],
       exits:[{x:1,y:4,to:'route',px:10*TILE,py:4*TILE}]
     },
     alley: {
@@ -286,7 +286,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
       lines.push('Seen: '+Object.keys(seen).length); lines.push('Tap again to cycle lead.');
       startDialog(lines); closeMenu();
-    } else if(a==='reorder'){ if(party.length>1){ var lead=party.shift(); party.push(lead); active=0; startDialog(['Lead is now '+party[0].name+'.']); } else startDialog(['Only one Owlie.']); closeMenu(); }
+    } else if(a==='reorder'){ if(party.length>1){ var lead=party.shift(); party.push(lead); active=0; startDialog(['Lead creature is now '+party[0].name+'.']); } else startDialog(['Only one creature.']); closeMenu(); }
 else if(a==='stone'){ if(tokens>=20 && party[active].stage<2){ tokens-=20; party[active].stage++; var m=null; for(var i=0;i<MONSTERS.length;i++) if(MONSTERS[i].id===party[active].species) m=MONSTERS[i]; if(m) party[active].name=m.stages[party[active].stage]; party[active].max+=5; party[active].atk+=2; party[active].hp=party[active].max; startDialog(['Evolved with stone!']); } else startDialog(['Need 20 tokens and not fully evolved.']); closeMenu(); }
 else if(a==='stone','equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry.']); } else if(tokens>=10){ tokens-=10; party[active].held='Focus'; startDialog(['Equipped Focus (ATK).']); } else startDialog(['Need berries or 10 tokens.']); closeMenu(); }
 else if(a==='items'){
@@ -533,7 +533,7 @@ if(sleepTurns>0){ sleepTurns--; startDialog(['Enemy is frozen!']); return; }
 var back = Math.max(1, wild.atk - Math.floor(p.def/3));
       p.hp -= back; shake=4;
       battleLog.push('Took '+back);
-      if(p.hp<=0){ p.hp=1; startDialog(['Your Owlie is tired.']); endBattle(false,false); return; }
+      if(p.hp<=0){ p.hp=1; startDialog(['Your creature is tired.']); endBattle(false,false); return; }
 if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p.hp+10); p.held=null; battleLog.push('Held Berry!'); }
         else if(p.held==='Focus'){ p.atk+=2; p.held=null; battleLog.push('Focus boost!'); }
         else if(p.held==='Shield'){ p.def+=2; p.held=null; battleLog.push('Shield up!'); } }
@@ -545,8 +545,8 @@ if(packs>=1 && burnTurns>0){ packs--; burnTurns=0; startDialog(['Pack cleared bu
       else if(packs>=1){ packs--; berries+=2; startDialog(['Opened pack. Got berries.']); }
       else startDialog(['Nothing useful.']);
     } else if(a==='swap'){
-      if(party.length>1){ active=(active+1)%party.length; startDialog(['Lead is now '+party[active].name+'.']); }
-      else startDialog(['Only one Owlie.']);
+      if(party.length>1){ active=(active+1)%party.length; startDialog(['Lead creature is now '+party[active].name+'.']); }
+      else startDialog(['Only one creature.']);
     } else if(a==='catch'){
       if(wild.name.indexOf('Scalper')>=0 || wild.name==='Rival'){ startDialog(['Cannot catch trainers.']); return; }
 var odds = Math.round((0.25 + (1 - wild.hp/wild.max)*0.55)*100);
@@ -819,7 +819,7 @@ setInterval(function(){
   // ohhRIPZ account integration
   window.resetToTitle = function(){
     px=4*TILE; py=4*TILE; zone='plaza';
-    startDialog(['Welcome to RIPZ Raiders. TAKE YOUR SHOT!']);
+    startDialog(['Welcome, Owlie. TAKE YOUR SHOT!']);
   };
   window.onAccountChange = function(user){
     if(user && window.RIPZ_ACCOUNT){
