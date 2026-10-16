@@ -16,6 +16,38 @@
   var px = 4*TILE, py = 4*TILE, facing = 0, frame = 0, zone = 'plaza';
   var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust'], shiny:false, held:'Berry'}];
 
+  
+  var MOVES = {
+    Peck:{pwr:35, type:'normal', pp:25},
+    Gust:{pwr:40, type:'flying', pp:20},
+    Tackle:{pwr:30, type:'normal', pp:30},
+    Ember:{pwr:40, type:'fire', pp:20},
+    Spark:{pwr:40, type:'electric', pp:20},
+    Bite:{pwr:45, type:'dark', pp:15},
+    Leaf:{pwr:40, type:'grass', pp:20},
+    Rock:{pwr:50, type:'rock', pp:15},
+    Ice:{pwr:40, type:'ice', pp:20},
+    Sand:{pwr:35, type:'ground', pp:25}
+  };
+  var TYPES = {
+    hootling:'normal', packrat:'normal', foilpup:'steel', nestling:'flying',
+    screech:'dark', pebble:'rock', spark:'electric', moss:'grass',
+    dune:'ground', frost:'ice', ember:'fire'
+  };
+  var EFFECT = {
+    fire:{grass:2, ice:2, water:0.5, fire:0.5},
+    water:{fire:2, ground:2, grass:0.5, water:0.5},
+    grass:{water:2, ground:2, fire:0.5, grass:0.5},
+    electric:{water:2, flying:2, ground:0, electric:0.5},
+    ice:{grass:2, ground:2, fire:0.5, ice:0.5},
+    rock:{fire:2, flying:2, ground:0.5},
+    ground:{electric:2, fire:2, grass:0.5, flying:0},
+    flying:{grass:2, rock:0.5, electric:0.5},
+    dark:{normal:1.2},
+    steel:{ice:1.5, fire:0.5},
+    normal:{}
+  };
+
   var MONSTERS = [
     {id:'hootling', stages:['Hootling','Owlet','Owlie'], baseHp:22, baseAtk:9, color:'#4060c0'},
     {id:'packrat', stages:['Packrat','Hoarder','Vaultlord'], baseHp:20, baseAtk:8, color:'#c06040'},
@@ -44,7 +76,7 @@
     var stage = 0;
     var name = m.stages[stage];
     var hp = m.baseHp + Math.floor(Math.random()*6);
-    return {name:name, species:m.id, stage:stage, hp:hp, max:hp, atk:m.baseAtk+Math.floor(Math.random()*3), def:3+Math.floor(Math.random()*2), color:m.color, moves:['Peck','Gust','Tackle']};
+    return {name:name, species:m.id, stage:stage, hp:hp, max:hp, atk:m.baseAtk+Math.floor(Math.random()*3), def:3+Math.floor(Math.random()*2), color:m.color, moves: (TYPES[m.id]==='fire'?['Ember','Peck','Tackle']:TYPES[m.id]==='electric'?['Spark','Gust','Tackle']:TYPES[m.id]==='grass'?['Leaf','Tackle','Peck']:TYPES[m.id]==='rock'?['Rock','Tackle','Peck']:TYPES[m.id]==='ice'?['Ice','Gust','Peck']:TYPES[m.id]==='ground'?['Sand','Tackle','Peck']:TYPES[m.id]==='dark'?['Bite','Peck','Tackle']:['Peck','Gust','Tackle'])};
   }
   function checkEvo(p){
     for(var i=0;i<MONSTERS.length;i++){
@@ -366,7 +398,8 @@ else if(n.name==='Note' && !flags.gotNote){
           flags.gotNote=true; notes++;
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
-        } else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
+        } else if(n.name==='Gym Leader' && !flags.beatGym){ startBattle({name:'Gym Leader', species:'ember', hp:45, max:45, atk:14, def:6, moves:['Ember','Peck','Tackle']}, true); }
+else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
 else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
 startBattle({name:'Scalper',hp:40,max:40,atk:12,def:5}, true);
 } else if(n.name==='Scalper' && !flags.beatScalper){
@@ -444,31 +477,40 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
       var moves = p.moves || ['Peck','Gust','Tackle'];
       var move = moves[moveSel % moves.length];
       pickingMove=false;
-      var bonus = move==='Gust'?3 : move==='Tackle'?1 : 0;
-      var dmg = p.atk + bonus + (Math.random()<0.15 ? 4 : 0);
+      var moveData = MOVES[move] || {pwr:30, type:'normal'};
+      var atkType = moveData.type;
+      var defType = TYPES[wild.species] || 'normal';
+      var mult = (EFFECT[atkType] && EFFECT[atkType][defType]) || 1;
+      var dmg = Math.max(1, Math.floor((p.atk + moveData.pwr/4) * mult) - Math.floor(wild.def/3));
+      var effMsg = mult>1 ? ' Super!' : mult<1 && mult>0 ? ' Weak.' : mult===0 ? ' No effect!' : '';
       battleLog.push(move+'!');
-if(Math.random()<0.12){ burnTurns=2; battleLog.push('Burned!'); }
-if(Math.random()<0.08){ sleepTurns=1; battleLog.push('Slept!'); }
+      if(atkType==='fire' && Math.random()<0.25){ burnTurns=3; battleLog.push('Burn!'); }
+      if(atkType==='ice' && Math.random()<0.2){ sleepTurns=2; battleLog.push('Frozen!'); }
       windup = 8; attackOffset = 12;
       setTimeout(function(){
         wild.hp -= dmg; shake=6; flash=8; floatText={text:'-'+dmg, x:120, y:40, life:20};
         beep(280,0.07);
       }, 200);
       shake=6; beep(280,0.07);
-      battleLog.push('You hit for '+dmg); shake=4;
+      battleLog.push('You hit for '+dmg+effMsg); shake=4;
       if(wild.hp<=0){
-        if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
+        if(wild.name==='Gym Leader'){ flags.beatGym=true; badges++; unlock('gym','Gym Badge'); }
+if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
         if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; if(!ngPlus){ ngPlus=true; startDialog(['New Game+ unlocked!']); } }
 if(wild.name==='Rival'){ rivalWins++; unlock('rival','Beat Rival'); }
         startDialog(['You won!']); endBattle(true,false); return;
       }
-      var back = Math.max(1, wild.atk - Math.floor(p.def/3));
+      if(burnTurns>0){ wild.hp=Math.max(1,wild.hp-2); burnTurns--; battleLog.push('Burn damage!'); }
+if(sleepTurns>0){ sleepTurns--; startDialog(['Enemy is frozen!']); return; }
+var back = Math.max(1, wild.atk - Math.floor(p.def/3));
       p.hp -= back; shake=4;
       battleLog.push('Took '+back);
       if(p.hp<=0){ p.hp=1; startDialog(['Your Owlie is tired.']); endBattle(false,false); return; }
 if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p.hp+10); p.held=null; battleLog.push('Held Berry!'); } }
       startDialog(['Hit for '+dmg+'!','Enemy hit for '+back+'.']);
     } else if(a==='item'){
+if(berries>=1 && p.hp<p.max){ berries--; p.hp=Math.min(p.max, p.hp+15); startDialog(['Berry used. +15 HP']); return; }
+if(packs>=1 && burnTurns>0){ packs--; burnTurns=0; startDialog(['Pack cleared burn.']); return; }
       if(berries>=1 && p.hp<p.max){ berries--; p.hp=Math.min(p.max, p.hp+12); startDialog(['Berry used.']); beep(500,0.06); }
       else if(packs>=1){ packs--; berries+=2; startDialog(['Opened pack. Got berries.']); }
       else startDialog(['Nothing useful.']);
@@ -478,7 +520,7 @@ if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p
     } else if(a==='catch'){
       if(wild.name.indexOf('Scalper')>=0 || wild.name==='Rival'){ startDialog(['Cannot catch trainers.']); return; }
 var odds = Math.round((0.25 + (1 - wild.hp/wild.max)*0.55)*100);
-      var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
+      var chance = 0.2 + (1 - wild.hp/wild.max)*0.5 + (burnTurns>0||sleepTurns>0?0.2:0);
       var shakes = Math.random() < chance ? 3 : Math.floor(Math.random()*3);
       var msgs = [];
       ballAnim = {x:40, y:70, life:30, shakes:shakes};
