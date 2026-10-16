@@ -454,7 +454,7 @@ else if(n.name==='Note' && !flags.gotNote){
 else if(n.name==='Gym3' && !flags.beatGym3){ startBattle({name:'Gym3', team:[{name:'Sparkowl',species:'spark',hp:48,atk:14,moves:['Spark']},{name:'Thunderowl',species:'spark',hp:58,atk:16,moves:['Spark','Bite']}]}, true); }
 else if(n.name==='Gym2' && !flags.beatGym2){ startBattle({name:'Gym2', team:[{name:'Frostowl',species:'frost',hp:42,atk:11,moves:['Ice']},{name:'Glacier',species:'frost',hp:50,atk:13,moves:['Ice','Gust']}]}, true); }
 else if(n.name==='Gym Leader' && !flags.beatGym){ startBattle({name:'Gym Leader', species:'ember', hp:45, max:45, atk:14, def:6, moves:['Ember','Peck','Tackle']}, true); }
-else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
+else if(n.name==='Rival'){ startDialog(['Rival: I have trained!']); startBattle({name:'Rival',hp:40+rivalWins*6,max:40,atk:11+rivalWins,def:5}, true); }
 else if(n.name==='Scalper' && flags.canRematch && flags.beatScalper){
 startBattle({name:'Scalper',hp:40,max:40,atk:12,def:5}, true);
 } else if(n.name==='Scalper' && !flags.beatScalper){
@@ -485,7 +485,7 @@ p.hp=party[active].hp;
 
   function gainXP(amount){
     var p=party[active];
-    p.xp += amount;
+    p.xp += amount + Math.floor(wild.atk/2);
     var evo=checkEvo(p); if(evo){ shake=12; flash=15; beep(720,0.2); startDialog([p.name+' evolved into '+evo+'!','HP '+p.max+'  ATK '+p.atk]); }
 if(p.xp >= p.lvl*8){ beep(600,0.12);
       p.xp = 0; p.lvl++; p.max+=4; p.hp=p.max; p.atk+=1; p.def+=1;
@@ -573,7 +573,7 @@ if(wild.name==='Gym2'){ flags.beatGym2=true; badges++; unlock('gym2','Ice Badge'
 if(wild.name==='Gym Leader'){ flags.beatGym=true; badges++; unlock('gym','Gym Badge'); }
 if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
         if(wild.name==='Lead Scalper'){ flags.beatLead=true; badges++; if(!ngPlus){ ngPlus=true; startDialog(['New Game+ unlocked!']); } }
-if(wild.name==='Rival'){ rivalWins++; unlock('rival','Beat Rival'); }
+if(wild.name==='Rival'){ rivalWins++; tokens+=3; unlock('rival','Beat Rival'); startDialog(['Rival: I will return stronger.']); }
         startDialog(['You won!']); endBattle(true,false); return;
       }
       if(burnTurns>0){ wild.hp=Math.max(1,wild.hp-2); burnTurns--; battleLog.push('Burn damage!'); }
