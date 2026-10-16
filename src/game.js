@@ -268,7 +268,7 @@ else if(a==='pc'){
 } else if(a==='rival'){
   startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true);
   closeMenu();
-} else if(a==='settings'){ mute=!mute; textSpeed = textSpeed===1?2:1; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
+} else if(a==='settings'){ mute=!mute; textSpeed = textSpeed===1?2:1; startDialog([mute?'Sound off.':'Sound on.','Steps: '+steps,'Time: '+Math.floor(playTime/60)+'m','Tokens: '+tokens,'Seen: '+Object.keys(seen).length,'Badges: '+badges,'Party: '+party.length+'/5','NG+: '+(ngPlus?'Yes':'No')]); closeMenu(); }
     else if(a==='minigame'){ var r=Math.random()<0.5; if(r){ berries++; startDialog(['Card flip: win! +1 berry.']); } else startDialog(['Card flip: lose.']); closeMenu(); }
 else if(a==='reset'){ if(confirm('Reset all progress?')){ localStorage.removeItem('ripz_save'); location.reload(); } closeMenu(); }
 else closeMenu();
@@ -330,6 +330,7 @@ if(inBattle){ battleAction(); return; }
             var msg = '';
             if(pull < 0.03){ etbs++; badges++; msg = 'JACKPOT! ETB + Badge!'; }
 else if(pull < 0.08){ etbs++; msg = 'ETB pull!'; }
+else if(pull < 0.12){ packs++; msg = 'Bonus pack!'; }
             else if(pull < 0.15){ berries += 5; msg = 'Big berry pull! +5'; }
             else if(pull < 0.35){ tokens += 6; msg = 'Token pull! +6'; }
             else if(pull < 0.55){ berries += 2; tokens += 2; msg = 'Mixed pull. +2 berries, +2 tokens'; }
@@ -512,7 +513,7 @@ if(eyes){ var bob = (frame%4<2)?0:1; y+=bob; }
     var w=canvas.width, h=canvas.height;
     ctx.save();
     if(shake>0){ ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
-    ctx.fillStyle=dayPhase?'#0a0a20':'#000'; ctx.fillRect(0,0,w,h);
+    if(dayPhase){ ctx.fillStyle='rgba(10,10,40,0.35)'; ctx.fillRect(0,0,w,h); }
 if(fadeAlpha>0){ ctx.fillStyle='rgba(0,0,0,'+fadeAlpha+')'; ctx.fillRect(0,0,w,h); fadeAlpha=Math.max(0,fadeAlpha-0.05); }
 if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     var zm=z();
@@ -548,11 +549,12 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       var ms = party[active].moves || ['Peck','Gust','Tackle'];
       var hints = {Peck:'normal', Gust:'strong', Tackle:'steady'};
       for(var mi=0; mi<ms.length; mi++){
-        ctx.fillStyle = mi===moveSel ? '#ff0' : '#fff';
+        ctx.fillStyle = mi===moveSel ? '#ff0' : '#ccc';
         ctx.fillText((mi===moveSel?'> ':'  ')+ms[mi]+' ('+(hints[ms[mi]]||'')+')', 8, 108+mi*12);
       }
     }
-if(battleLog.length){
+if(battleLog.length){ ctx.fillStyle='#fff'; ctx.font='8px monospace'; var last=battleLog.slice(-2); for(var bi=0;bi<last.length;bi++) ctx.fillText(last[bi], 4, 130+bi*8); }
+if(false){
         ctx.fillText(battleLog[battleLog.length-1], 8, 130);
       }
     }
