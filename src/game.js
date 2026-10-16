@@ -507,19 +507,28 @@ msgs.push('Got it!');
   function drawSprite(x,y,body,eyes,stage){
     var f = Math.floor(frame/4)%2;
     stage = stage||0;
+    var bob = eyes ? ((frame%8<4)?0:1) : ((frame%12<6)?0:1);
+    y += bob;
+    // legs
     ctx.fillStyle=body;
-    ctx.fillRect(x+1,y+1,TILE-4,TILE-4);
-    if(stage>=1){ ctx.fillStyle='#fff'; ctx.fillRect(x+(f?2:10),y+2,3,2); }
-    if(stage>=2){ ctx.fillStyle='#ff0'; ctx.fillRect(x+10,y+2,3,2); }
+    ctx.fillRect(x+3, y+10, 3, 5);
+    ctx.fillRect(x+9, y+10, 3, 5);
+    // torso
+    ctx.fillRect(x+4, y+5, 7, 6);
+    // arms
+    ctx.fillRect(x+1, y+6, 2, 4);
+    ctx.fillRect(x+12, y+6, 2, 4);
+    // head
+    ctx.fillStyle=body;
+    ctx.fillRect(x+4, y+1, 7, 5);
+    if(stage>=1){ ctx.fillStyle='#fff'; ctx.fillRect(x+(f?3:10), y, 3, 2); }
+    if(stage>=2){ ctx.fillStyle='#ff0'; ctx.fillRect(x+10, y, 3, 2); }
     if(eyes){
       ctx.fillStyle='#fff';
-      ctx.fillRect(x+3,y+5,3,3); ctx.fillRect(x+8,y+5,3,3);
+      ctx.fillRect(x+5, y+2, 2, 2); ctx.fillRect(x+8, y+2, 2, 2);
       ctx.fillStyle='#000';
-      ctx.fillRect(x+4,y+6,2,2); ctx.fillRect(x+9,y+6,2,2);
+      ctx.fillRect(x+5, y+3, 1, 1); ctx.fillRect(x+8, y+3, 1, 1);
     }
-    if(frame%2 && eyes){ ctx.fillStyle=body; ctx.fillRect(x,y+TILE-4,3,2); ctx.fillRect(x+TILE-5,y+TILE-4,3,2); }
-if(eyes){ var bob = (frame%8<4)?0:2; y+=bob; }
-if(!eyes && frame%12<6) y+=1;
   }
 
   function draw(){
