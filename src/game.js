@@ -69,10 +69,11 @@ var MOVES = {
     plaza: ['hootling','nestling','moss'],
     route: ['packrat','foilpup','screech','pebble'],
     alley: ['spark','ember','dune'],
-    shop: ['frost'], forest: ['moss','elderowl','canopy'], rooftop: ['canopy','elderowl','screech']
+    shop: ['frost'], forest: ['moss','elderowl','canopy'], rooftop: ['canopy','elderowl','screech'], cave: ['pebble','frost','screech'], plaza_night: ['screech','frost','ember'], route_night: ['screech','spark','dune']
   };
   function randomWild(){
     var pool = ZONE_WILDS[zone] || ZONE_WILDS.plaza;
+if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
     var id = pool[Math.floor(Math.random()*pool.length)];
     var m = null;
     for(var i=0;i<MONSTERS.length;i++) if(MONSTERS[i].id===id) m=MONSTERS[i];
@@ -98,7 +99,7 @@ var MOVES = {
 
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
-  var inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
+  var titleScreen = true, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
   var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
@@ -164,6 +165,7 @@ var MOVES = {
       npcs:[{x:2*TILE,y:2*TILE,name:'Clerk',lines:['SWAP berries for packs.']},{x:6*TILE,y:3*TILE,name:'Pack Bar',lines:['Rip packs. 5 tokens to buy one.']}],
       exits:[{x:5,y:1,to:'plaza',px:5*TILE,py:8*TILE}]
     },
+    cave: { name:'Cave', map:[[1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,1],[1,0,2,2,0,0,2,2,0,1],[1,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1]], npcs:[], exits:[{x:1,y:1,to:'route',px:4*TILE,py:4*TILE}] },
     rooftop: {
       w:8, h:6,
       map:[[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,3,3,3,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
@@ -225,9 +227,9 @@ if(typeof d.ngPlus==='boolean') ngPlus=d.ngPlus;
   function unlock(id, msg){
     if(achievements.indexOf(id)<0){ achievements.push(id); startDialog(['Achievement: '+msg]); beep(800,0.1); }
   }
-function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave())); }catch(e){} }
+function save(slot){ slot=slot||1; try{ localStorage.setItem('ripz_save_'+slot, JSON.stringify(getSave())); localStorage.setItem('ripz_save', JSON.stringify(getSave())); }catch(e){} }
 
-  function beep(freq, dur){
+  function beep(freq, dur){ if(mute) return;
     if(mute) return;
     try{
       var ac = new (window.AudioContext||window.webkitAudioContext)();
@@ -264,7 +266,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
   function openMenu(){
     menuOpen=true; menuSel=0;
     var menu = document.getElementById('menu');
-    var labels = ['Resume','Party','Save','Settings','Quests','PC Box','Fast Travel','Reset','Close'];
+    var labels = ['Resume','Party','Summary','Save','Settings','Quests','PC Box','Fast Travel','Reset','Close'];
     menu.innerHTML = labels.map(function(l){ return '<div>'+l+'</div>'; }).join('');
     menu.style.display='block';
     updateMenu();
@@ -280,7 +282,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['resume','party','save','settings','quests','pc','travel','reset','close'];
+    var acts=['resume','party','summary','save','settings','quests','pc','travel','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
@@ -491,7 +493,7 @@ seen[wild.name]=true;
     if(a==='fight'){
       if(sleepTurns>0){ sleepTurns--; startDialog(['Asleep!']); return; }
 if(burnTurns>0){ burnTurns--; var bd=2; party[active].hp=Math.max(1,party[active].hp-bd); battleLog.push('Burn -'+bd); }
-if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); return; }
+if(!pickingMove){ pickingMove=true; moveSel=0; var moves=p.moves||['Peck']; var md=MOVES[moves[moveSel%moves.length]]||{}; startDialog([moves[moveSel%moves.length]+' ('+(md.type||'?')+' '+(md.pwr||'?')+')']); return; }
       var moves = p.moves || ['Peck','Gust','Tackle'];
       var move = moves[moveSel % moves.length];
       pickingMove=false;
@@ -536,7 +538,8 @@ var back = Math.max(1, wild.atk - Math.floor(p.def/3));
       if(p.hp<=0){ p.hp=1; startDialog(['Your creature is tired.']); endBattle(false,false); return; }
 if(p.hp < p.max*0.3){ beep(200,0.1); if(p.held==='Berry'){ p.hp=Math.min(p.max,p.hp+10); p.held=null; battleLog.push('Held Berry!'); }
         else if(p.held==='Focus'){ p.atk+=2; p.held=null; battleLog.push('Focus boost!'); }
-        else if(p.held==='Shield'){ p.def+=2; p.held=null; battleLog.push('Shield up!'); } }
+        else if(p.held==='Shield'){ p.def+=2; p.held=null; battleLog.push('Shield up!'); }
+else if(p.held==='Quick'){ battleLog.push('Quick strike!'); p.held=null; } }
       startDialog(['Hit for '+dmg+'!','Enemy hit for '+back+'.']);
     } else if(a==='item'){
 if(berries>=1 && p.hp<p.max){ berries--; p.hp=Math.min(p.max, p.hp+15); startDialog(['Berry used. +15 HP']); return; }
@@ -648,7 +651,21 @@ msgs.push('Got it!');
     mctx.fillStyle='#ff0';
     mctx.fillRect(pxm*cell, pym*cell, cell, cell);
   }
-  function draw(){
+  
+  function drawTitle(){
+    var w=canvas.width, h=canvas.height;
+    ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#c9a227'; ctx.font='14px monospace'; ctx.textAlign='center';
+    ctx.fillText('RIPZ RAIDERS', w/2, 40);
+    ctx.fillStyle='#fff'; ctx.font='8px monospace';
+    ctx.fillText('TAKE YOUR SHOT!', w/2, 55);
+    ctx.fillText('A - New Game', w/2, 90);
+    ctx.fillText('B - Continue', w/2, 105);
+    ctx.textAlign='left';
+  }
+
+function draw(){
+    if(titleScreen){ drawTitle(); return; }
     var w=canvas.width, h=canvas.height;
     drawBg(w,h);
     ctx.save();
@@ -740,7 +757,8 @@ var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+b
   window.addEventListener('keydown', function(e){
     keys[e.key]=true;
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); interact(); }
-    if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) openMenu(); }
+    if(titleScreen){ if(e.key==='a'||e.key==='A'||e.key==='Enter'){ titleScreen=false; startDialog(['Welcome, Owlie.','Walk into tall grass to find creatures.','A confirms, B cancels.']); } else if(e.key==='b'||e.key==='B'){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); } return; }
+if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) openMenu(); }
     if(e.key==='n'){ mute=!mute; startDialog([mute?'Muted.':'Sound on.']); }
     if(menuOpen){
       if(e.key==='ArrowUp'){ menuSel=(menuSel+13)%14; updateMenu(); }
@@ -780,6 +798,7 @@ var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+b
   document.getElementById('btnA').addEventListener('click', interact);
   document.getElementById('btnA').addEventListener('touchstart', function(e){ e.preventDefault(); interact(); }, {passive:false});
   document.getElementById('btnB').addEventListener('click', function(){
+if(titleScreen){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); return; }
     if(dialog) advanceDialog();
     else if(menuOpen) closeMenu();
     else if(inBattle){ battleSel=3; updateBattle(); battleAction(); }
@@ -819,7 +838,7 @@ setInterval(function(){
   // ohhRIPZ account integration
   window.resetToTitle = function(){
     px=4*TILE; py=4*TILE; zone='plaza';
-    startDialog(['Welcome, Owlie. TAKE YOUR SHOT!']);
+    startDialog(['Welcome, Owlie.','Walk into tall grass to find creatures.','A confirms, B cancels.']);
   };
   window.onAccountChange = function(user){
     if(user && window.RIPZ_ACCOUNT){
