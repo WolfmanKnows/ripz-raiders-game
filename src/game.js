@@ -442,7 +442,7 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
       battleLog.push(move+'!');
 if(Math.random()<0.12){ burnTurns=2; battleLog.push('Burned!'); }
 if(Math.random()<0.08){ sleepTurns=1; battleLog.push('Slept!'); }
-      windup = 8;
+      windup = 8; attackOffset = 12;
       setTimeout(function(){
         wild.hp -= dmg; shake=6; flash=8; floatText={text:'-'+dmg, x:120, y:40, life:20};
         beep(280,0.07);
@@ -531,6 +531,7 @@ if(fadeAlpha>0){ ctx.fillStyle='rgba(0,0,0,'+fadeAlpha+')'; ctx.fillRect(0,0,w,h
     if(flash>0){ ctx.fillStyle='rgba(255,255,255,'+(flash/15)+')'; ctx.fillRect(0,0,w,h); flash--; }
     if(floatText){ ctx.fillStyle='#ff0'; ctx.font='10px monospace'; ctx.fillText(floatText.text, floatText.x, floatText.y); floatText.y-=1; floatText.life--; if(floatText.life<=0) floatText=null; }
     if(windup>0){ ctx.fillStyle='#fff'; ctx.fillRect(20, 70, 8, 4); windup--; }
+if(attackOffset>0) attackOffset = Math.max(0, attackOffset-2);
     if(ballAnim){ ctx.fillStyle='#e44'; ctx.beginPath(); ctx.arc(ballAnim.x, ballAnim.y, 5, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillRect(ballAnim.x-5, ballAnim.y-1, 10, 2); ballAnim.y-=0.5; ballAnim.life--; if(ballAnim.life<=0) ballAnim=null; }
 if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     var zm=z();
@@ -561,7 +562,7 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       ctx.fillText(party[active].name+' Lv'+party[active].lvl, 8, 100);
       drawBar(8,104,70,6, party[active].hp, party[active].max, '#40c040');
       drawSprite(110, 36, wild.color||'#c05040', true, wild.stage);
-      drawSprite(16, 60, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage);
+      drawSprite(16+attackOffset, 60, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage);
       if(pickingMove){
       var ms = party[active].moves || ['Peck','Gust','Tackle'];
       var hints = {Peck:'normal', Gust:'strong', Tackle:'steady'};
