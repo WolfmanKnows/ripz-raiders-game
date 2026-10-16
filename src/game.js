@@ -69,7 +69,7 @@ var MOVES = {
     plaza: ['hootling','nestling','moss'],
     route: ['packrat','foilpup','screech','pebble'],
     alley: ['spark','ember','dune'],
-    shop: ['frost'], forest: ['moss','elderowl','canopy'], rooftop: ['canopy','elderowl','screech'], cave: ['pebble','frost','screech'], plaza_night: ['screech','frost','ember'], route_night: ['screech','spark','dune']
+    shop: ['frost'], forest: ['moss','elderowl','canopy'], rooftop: ['canopy','elderowl','screech'], cave: ['pebble','frost','screech'], plaza_night: ['screech','frost','ember'], town2_night: ['spark','ember','dune'], forest_night: ['moss','screech','frost'], route_night: ['screech','spark','dune']
   };
   function randomWild(){
     seen[zone] = (seen[zone]||0)+1;
@@ -608,7 +608,7 @@ flash=6;
       if(shakes===3 && party.length<5){
         var isShiny = Math.random()<shinyOdds;
         party.push({name:wild.name, species:wild.species, stage:wild.stage||0, hp:Math.max(1,wild.hp), max:wild.max, atk:wild.atk, def:wild.def||3, lvl:4, xp:0, moves:wild.moves||['Peck','Gust','Tackle'], shiny:isShiny, held:null, color:wild.color});
-        if(isShiny) msgs.push('Shiny!');
+        if(isShiny){ msgs.push('Shiny!'); flash=15; }
         msgs.unshift(odds+'% chance');
 msgs.push('Got it!');
         unlock('firstcatch','First Catch');
@@ -925,7 +925,7 @@ if(titleScreen){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(
     (function(el,idx){ el.addEventListener('click', function(){ battleSel=idx; updateBattle(); battleAction(); }); })(bItems[k],k);
   }
 
-  setInterval(function(){ playTime++; dayPhase = Math.floor(playTime/120)%2; if(playTime%30===0) weather = weather?0:1; }, 1000);
+  setInterval(function(){ playTime++; if(steps>0 && steps%100===0) dayPhase = dayPhase?0:1; dayPhase = Math.floor(playTime/120)%2; if(playTime%30===0) weather = weather?0:1; }, 1000);
 setInterval(function(){
     if(dialog||menuOpen||inBattle) return;
     var tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
