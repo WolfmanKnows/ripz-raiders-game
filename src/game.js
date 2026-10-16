@@ -679,7 +679,7 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
       var col = n.name.indexOf('Scalper')>=0 ? '#c03030' : n.name==='Clerk'||n.name==='Shopkeeper' ? '#f0c080' : n.name==='Note' ? '#e0e080' : '#c0b090';
       drawSprite(ox+n.x, oy+n.y, col, n.name!=='Note', 0, n.name==='Clerk'||n.name==='Shopkeeper'?'owlie_trainer':'hootling');
     }
-    drawSprite(ox+px, oy+py, (party[active]&&party[active].color)||'#3050b0', true, party[active]&&party[active].stage, (party[active]&&party[active].species)||'hootling');
+    drawSprite(ox+px, oy+py, '#3050b0', true, 0, 'owlie_trainer');
 
     if(inBattle && wild){
       ctx.fillStyle='#000d'; ctx.fillRect(0,0,w,h);
