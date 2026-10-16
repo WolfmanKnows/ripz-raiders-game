@@ -19,7 +19,7 @@
   
   
   var LEARN = {
-    5: 'Gust', 8: 'Tackle', 10: 'Bite', 12: 'Ember', 15: 'Spark', 18: 'Leaf'
+    5: 'Gust', 8: 'Tackle', 10: 'Bite', 12: 'Ember', 15: 'Spark', 18: 'Leaf', 20: 'Rock', 22: 'Ice', 25: 'Sand'
   };
 var MOVES = {
     Peck:{pwr:35, type:'normal', pp:25},
@@ -264,7 +264,7 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
   function openMenu(){
     menuOpen=true; menuSel=0;
     var menu = document.getElementById('menu');
-    var labels = ['Party','Reorder Lead','Equip Berry','Items','Dex','Quests','Save','Fast Travel','PC Box','Rival','Settings','Card Flip','Reset','Close'];
+    var labels = ['Party','Reorder Lead','Equip Berry','Evo Stone','Items','Dex','Quests','Save','Fast Travel','PC Box','Rival','Settings','Card Flip','Reset','Close'];
     menu.innerHTML = labels.map(function(l){ return '<div>'+l+'</div>'; }).join('');
     menu.style.display='block';
     updateMenu();
@@ -280,14 +280,15 @@ function save(){ try{ localStorage.setItem('ripz_save', JSON.stringify(getSave()
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['party','reorder','equip','items','dex','quests','save','travel','pc','rival','settings','minigame','reset','close'];
+    var acts=['party','reorder','stone','equip','items','dex','quests','save','travel','pc','rival','settings','minigame','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
       lines.push('Seen: '+Object.keys(seen).length); lines.push('Tap again to cycle lead.');
       startDialog(lines); closeMenu();
     } else if(a==='reorder'){ if(party.length>1){ var lead=party.shift(); party.push(lead); active=0; startDialog(['Lead is now '+party[0].name+'.']); } else startDialog(['Only one Owlie.']); closeMenu(); }
-else if(a==='equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry.']); } else if(tokens>=10){ tokens-=10; party[active].held='Focus'; startDialog(['Equipped Focus (ATK).']); } else startDialog(['Need berries or 10 tokens.']); closeMenu(); }
+else if(a==='stone'){ if(tokens>=20 && party[active].stage<2){ tokens-=20; party[active].stage++; var m=null; for(var i=0;i<MONSTERS.length;i++) if(MONSTERS[i].id===party[active].species) m=MONSTERS[i]; if(m) party[active].name=m.stages[party[active].stage]; party[active].max+=5; party[active].atk+=2; party[active].hp=party[active].max; startDialog(['Evolved with stone!']); } else startDialog(['Need 20 tokens and not fully evolved.']); closeMenu(); }
+else if(a==='stone','equip'){ if(berries>=1){ party[active].held='Berry'; berries--; startDialog(['Equipped Berry.']); } else if(tokens>=10){ tokens-=10; party[active].held='Focus'; startDialog(['Equipped Focus (ATK).']); } else startDialog(['Need berries or 10 tokens.']); closeMenu(); }
 else if(a==='items'){
       startDialog(['Berries: '+berries+' (heal)','Packs: '+packs+' (open for bonus)','ETBs: '+etbs]);
       closeMenu();
@@ -404,6 +405,7 @@ else if(n.name==='Note' && !flags.gotNote){
           startDialog(['You found the note.','Scalpers meet in the alley.']);
           save();
         } else if(n.name==='Elite' && !flags.beatElite){ startBattle({name:'Elite', team:[{name:'Emberowl',species:'ember',hp:40,atk:12,moves:['Ember']},{name:'Sparkowl',species:'spark',hp:38,atk:13,moves:['Spark']},{name:'Phoenixowl',species:'ember',hp:55,atk:16,moves:['Ember','Bite']}]}, true); }
+else if(n.name==='Gym3' && !flags.beatGym3){ startBattle({name:'Gym3', team:[{name:'Sparkowl',species:'spark',hp:48,atk:14,moves:['Spark']},{name:'Thunderowl',species:'spark',hp:58,atk:16,moves:['Spark','Bite']}]}, true); }
 else if(n.name==='Gym2' && !flags.beatGym2){ startBattle({name:'Gym2', team:[{name:'Frostowl',species:'frost',hp:42,atk:11,moves:['Ice']},{name:'Glacier',species:'frost',hp:50,atk:13,moves:['Ice','Gust']}]}, true); }
 else if(n.name==='Gym Leader' && !flags.beatGym){ startBattle({name:'Gym Leader', species:'ember', hp:45, max:45, atk:14, def:6, moves:['Ember','Peck','Tackle']}, true); }
 else if(n.name==='Rival'){ startBattle({name:'Rival',hp:35+rivalWins*5,max:35,atk:10+rivalWins,def:4}, true); }
@@ -518,6 +520,7 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
           return;
         }
         if(wild.name==='Elite'){ flags.beatElite=true; badges++; unlock('elite','Elite Badge'); }
+if(wild.name==='Gym3'){ flags.beatGym3=true; badges++; unlock('gym3','Electric Badge'); }
 if(wild.name==='Gym2'){ flags.beatGym2=true; badges++; unlock('gym2','Ice Badge'); }
 if(wild.name==='Gym Leader'){ flags.beatGym=true; badges++; unlock('gym','Gym Badge'); }
 if(wild.name==='Scalper'){ flags.beatScalper=true; badges++; party[active].atk+=1; unlock('badge1','First Badge'); flags.canRematch=true; }
