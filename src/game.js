@@ -97,7 +97,8 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
     return null;
   }
 
-  var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
+  var MART = [{name:'Berry',cost:1,type:'berry'},{name:'Pack',cost:2,type:'pack'},{name:'Focus',cost:10,type:'focus'}];
+var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
   var titleScreen = true, partyScreen = false, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
@@ -434,10 +435,12 @@ else if(pull < 0.25){ berries+=4; msg = 'Berry burst! +4'; }
           return;
         }
         if(n.name==='Clerk'){
-          if(n.name==='Clerk' && flags.shopExtra){ if(berries>=3){ berries-=3; packs++; etbs++; startDialog(['Bought pack + ETB.']); save(); return; } }
-var cost = badges>=1 ? 1 : 2;
-if(berries>=cost){ berries-=cost; packs++; startDialog(['SWAP done. Cost '+cost+' berries.']); save(); }
-          else startDialog(['Need 2 berries.']);
+          var lines = ['Mart:'];
+          for(var mi=0; mi<MART.length; mi++) lines.push(MART[mi].name+' - '+MART[mi].cost+' berries');
+          lines.push('A to buy Berry');
+          if(berries>=1){ berries--; startDialog(['Bought Berry.']); }
+          else startDialog(lines);
+          save(); return;
         } else if(n.name==='Kid' && !flags.kidQuest && berries>=3){ berries-=3; packs++; flags.kidQuest=true; startDialog(['Thanks! Here is a pack.']); unlock('sidequest','Helped the Kid'); save(); }
 else if(n.name==='Rock' && !flags.smashRock){ if(party[active].moves && (party[active].moves.indexOf('Rock')>=0 || party[active].moves.indexOf('Sand')>=0)){ flags.smashRock=true; startDialog(['Smashed the rock!']); } else startDialog(['Need Rock or Ground move.']); }
 else if(n.name==='Tree' && !flags.cutTree){ if(party[active].moves && party[active].moves.indexOf('Leaf')>=0){ flags.cutTree=true; startDialog(['Used Leaf. Tree cut!']); } else startDialog(['Need a Grass move to cut.']); }
