@@ -617,6 +617,11 @@ if(false){
 var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+badges+' badges'+qmark;
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
+    var rb = document.getElementById('resBerries'); if(rb) rb.textContent = 'B '+berries;
+    var rp = document.getElementById('resPacks'); if(rp) rp.textContent = 'P '+packs;
+    var rt = document.getElementById('resTokens'); if(rt) rt.textContent = 'T '+tokens;
+    var bs = document.getElementById('battleStatus');
+    if(bs){ if(inBattle && wild){ bs.style.display='block'; bs.textContent = wild.name+' '+wild.hp+'/'+wild.max; } else bs.style.display='none'; }
     if(zoneTimer>0){ zoneTimer--; if(zoneTimer<=0) document.getElementById('zoneFlash').style.display='none'; }
     requestAnimationFrame(draw);
   }
