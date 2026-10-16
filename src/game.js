@@ -99,7 +99,7 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
 
   var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
-  var titleScreen = true, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
+  var titleScreen = true, partyScreen = false, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
   var wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
@@ -126,7 +126,7 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
       ],
       exits:[
         {x:5,y:1,to:'route',px:5*TILE,py:8*TILE},
-        {x:5,y:8,to:'shop',px:5*TILE,py:1*TILE},{x:3,y:1,to:'center',px:5*TILE,py:5*TILE},
+        {x:5,y:8,to:'shop',px:5*TILE,py:1*TILE},{x:3,y:1,to:'center',px:5*TILE,py:5*TILE},{x:1,y:3,to:'house',px:4*TILE,py:3*TILE},
         {x:10,y:5,to:'alley',px:1*TILE,py:5*TILE},{x:1,y:5,to:'rooftop',px:1*TILE,py:3*TILE}
       ]
     },
@@ -155,6 +155,12 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
       exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE},{x:10,y:4,to:'forest',px:1*TILE,py:4*TILE}]
     },
 
+    house: {
+      w:8, h:6,
+      map:[[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+      npcs:[{x:4*TILE,y:2*TILE,name:'Mom',lines:['Be careful out there.','Come home if you need rest.']}],
+      exits:[{x:4,y:4,to:'plaza',px:4*TILE,py:4*TILE}]
+    },
     center: {
       w:10, h:8,
       map:[
@@ -685,8 +691,29 @@ msgs.push('Got it!');
     ctx.textAlign='left';
   }
 
+
+  function drawParty(){
+    var w=canvas.width, h=canvas.height;
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#000'; ctx.font='10px monospace';
+    ctx.fillText('PARTY', 8, 16);
+    for(var i=0; i<party.length; i++){
+      var p=party[i];
+      var y=30+i*22;
+      ctx.fillStyle=i===active?'#ff0':'#000';
+      ctx.fillText((i===active?'> ':'  ')+p.name+' Lv'+p.lvl, 8, y);
+      ctx.fillStyle='#0a0';
+      var barW = Math.floor((p.hp/p.max)*40);
+      ctx.fillRect(8, y+4, barW, 4);
+      ctx.fillStyle='#000';
+      ctx.fillText(p.hp+'/'+p.max, 52, y+8);
+    }
+    ctx.fillText('A: Summary  B: Back', 8, h-8);
+  }
+
 function draw(){
     if(titleScreen){ drawTitle(); return; }
+if(partyScreen){ drawParty(); return; }
     var w=canvas.width, h=canvas.height;
     drawBg(w,h);
     ctx.save();
@@ -745,7 +772,7 @@ if(false){
     ctx.restore();
 
     var qmark = !flags.gotNote?' →Note':!flags.beatScalper?' →Scalper':!flags.kidQuest?' →Kid':'';
-var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+badges+' badges'+qmark;
+var hud = 'Lv'+ (party[active]?party[active].lvl:1) +' · '+zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+badges+' badges'+qmark;
     if(notes) hud += ' N'+notes;
     document.getElementById('hud').textContent = hud;
     drawMiniMap();
@@ -779,6 +806,7 @@ var hud = zone.toUpperCase()+(dayPhase?' · NIGHT':'')+' · '+score+' pts · '+b
     keys[e.key]=true;
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); interact(); }
     if(titleScreen){ if(e.key==='a'||e.key==='A'||e.key==='Enter'){ titleScreen=false; startDialog(['Welcome, Owlie.','Walk into tall grass to find creatures.','A confirms, B cancels.']); } else if(e.key==='b'||e.key==='B'){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); } return; }
+if(partyScreen && (e.key==='b'||e.key==='B'||e.key==='Escape')){ partyScreen=false; return; }
 if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) openMenu(); }
     if(e.key==='n'){ mute=!mute; startDialog([mute?'Muted.':'Sound on.']); }
     if(menuOpen){
@@ -819,6 +847,7 @@ if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) 
   document.getElementById('btnA').addEventListener('click', interact);
   document.getElementById('btnA').addEventListener('touchstart', function(e){ e.preventDefault(); interact(); }, {passive:false});
   document.getElementById('btnB').addEventListener('click', function(){
+if(partyScreen){ partyScreen=false; return; }
 if(titleScreen){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); return; }
     if(dialog) advanceDialog();
     else if(menuOpen) closeMenu();
