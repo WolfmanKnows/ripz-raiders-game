@@ -287,7 +287,7 @@ function save(slot){ slot=slot||1; try{ localStorage.setItem('ripz_save_'+slot, 
     if(!dialog) return;
     dialogIdx++;
     if(dialogIdx>=dialog.length){ dialog=null; document.getElementById('dialog').style.display='none'; }
-    else document.getElementById('dialog').textContent=dialog[dialogIdx];
+    else document.getElementById('dialog').textContent=dialog[dialogIdx]+(dialogIdx<dialog.length-1?' ▼':'');
   }
   function openMenu(){
     menuOpen=true; menuSel=0;
@@ -485,7 +485,9 @@ if(p.xp >= p.lvl*8){ beep(600,0.12);
     return false;
   }
 
-  function startBattle(w, isTrainer){
+  var battleIntro = 0;
+function startBattle(w, isTrainer){
+    battleIntro = 20;
     trainerTeam = w.team || null;
     trainerIdx = 0;
     flash=20; shake=8;
@@ -746,7 +748,8 @@ if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     }
     drawSprite(ox+px, oy+py, '#3050b0', true, 0, 'owlie_trainer');
 
-    if(inBattle && wild){
+    if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
+if(inBattle && wild){
       ctx.fillStyle='#000d'; ctx.fillRect(0,0,w,h);
       ctx.fillStyle='#fff'; ctx.font='9px monospace';
       ctx.fillText(wild.name, 90, 18);
@@ -788,7 +791,8 @@ var hud = 'Lv'+ (party[active]?party[active].lvl:1) +' · '+zone.toUpperCase()+(
     var rp = document.getElementById('resPacks'); if(rp) rp.textContent = 'P '+packs;
     var rt = document.getElementById('resTokens'); if(rt) rt.textContent = 'T '+tokens;
     var bs = document.getElementById('battleStatus');
-    if(bs){ if(inBattle && wild){ bs.style.display='block'; bs.textContent = wild.name+' '+wild.hp+'/'+wild.max; } else bs.style.display='none'; }
+    if(bs){ if(battleIntro>0){ ctx.fillStyle='rgba(0,0,0,'+(battleIntro/20)+')'; ctx.fillRect(0,0,w,h); battleIntro--; }
+if(inBattle && wild){ bs.style.display='block'; bs.textContent = wild.name+' '+wild.hp+'/'+wild.max; } else bs.style.display='none'; }
     if(zoneTimer>0){ zoneTimer--; if(zoneTimer<=0) document.getElementById('zoneFlash').style.display='none'; }
     requestAnimationFrame(draw);
   }
