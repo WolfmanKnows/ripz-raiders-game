@@ -442,7 +442,11 @@ if(!pickingMove){ pickingMove=true; moveSel=0; startDialog(['Choose a move.']); 
       battleLog.push(move+'!');
 if(Math.random()<0.12){ burnTurns=2; battleLog.push('Burned!'); }
 if(Math.random()<0.08){ sleepTurns=1; battleLog.push('Slept!'); }
-      wild.hp -= dmg; shake=6; flash=8; floatText={text:'-'+dmg, x:120, y:40, life:20};
+      windup = 8;
+      setTimeout(function(){
+        wild.hp -= dmg; shake=6; flash=8; floatText={text:'-'+dmg, x:120, y:40, life:20};
+        beep(280,0.07);
+      }, 200);
       shake=6; beep(280,0.07);
       battleLog.push('You hit for '+dmg); shake=4;
       if(wild.hp<=0){
@@ -470,6 +474,7 @@ var odds = Math.round((0.25 + (1 - wild.hp/wild.max)*0.55)*100);
       var chance = 0.25 + (1 - wild.hp/wild.max)*0.55;
       var shakes = Math.random() < chance ? 3 : Math.floor(Math.random()*3);
       var msgs = [];
+      ballAnim = {x:40, y:70, life:30, shakes:shakes};
       for(var s=0; s<shakes; s++){ msgs.push('...'); shake=3; }
 flash=6;
       if(shakes===3 && party.length<5){
@@ -525,6 +530,8 @@ if(!eyes && frame%12<6) y+=1;
 if(fadeAlpha>0){ ctx.fillStyle='rgba(0,0,0,'+fadeAlpha+')'; ctx.fillRect(0,0,w,h); fadeAlpha=Math.max(0,fadeAlpha-0.05); }
     if(flash>0){ ctx.fillStyle='rgba(255,255,255,'+(flash/15)+')'; ctx.fillRect(0,0,w,h); flash--; }
     if(floatText){ ctx.fillStyle='#ff0'; ctx.font='10px monospace'; ctx.fillText(floatText.text, floatText.x, floatText.y); floatText.y-=1; floatText.life--; if(floatText.life<=0) floatText=null; }
+    if(windup>0){ ctx.fillStyle='#fff'; ctx.fillRect(20, 70, 8, 4); windup--; }
+    if(ballAnim){ ctx.fillStyle='#e44'; ctx.beginPath(); ctx.arc(ballAnim.x, ballAnim.y, 5, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillRect(ballAnim.x-5, ballAnim.y-1, 10, 2); ballAnim.y-=0.5; ballAnim.life--; if(ballAnim.life<=0) ballAnim=null; }
 if(weather){ ctx.fillStyle='rgba(100,100,200,0.15)'; ctx.fillRect(0,0,w,h); }
     var zm=z();
     var ox=Math.floor((w - zm.w*TILE)/2);
