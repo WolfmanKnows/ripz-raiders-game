@@ -152,9 +152,15 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
         {x:3*TILE,y:4*TILE,name:'Note',lines:['A note: Scalpers meet in the alley.']},
         {x:8*TILE,y:4*TILE,name:'Scalper',lines:['These packs are mine!']},{x:4*TILE,y:6*TILE,name:'Rival',lines:['I will beat you!']}
       ],
-      exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE},{x:10,y:4,to:'forest',px:1*TILE,py:4*TILE}]
+      exits:[{x:5,y:8,to:'plaza',px:5*TILE,py:1*TILE},{x:10,y:4,to:'forest',px:1*TILE,py:4*TILE},{x:14,y:6,to:'town2',px:6*TILE,py:6*TILE}]
     },
 
+    town2: {
+      w:12, h:10,
+      map:[[1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,3,3,0,0,3,3,0,0,1],[1,0,0,3,3,0,0,3,3,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1]],
+      npcs:[{x:6*TILE,y:5*TILE,name:'Local',lines:['Welcome to the next town.','Gym is nearby.']}],
+      exits:[{x:6,y:8,to:'route',px:8*TILE,py:2*TILE}]
+    },
     house: {
       w:8, h:6,
       map:[[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
@@ -697,20 +703,22 @@ msgs.push('Got it!');
   function drawParty(){
     var w=canvas.width, h=canvas.height;
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle='#000'; ctx.font='10px monospace';
-    ctx.fillText('PARTY', 8, 16);
-    for(var i=0; i<party.length; i++){
-      var p=party[i];
-      var y=30+i*22;
-      ctx.fillStyle=i===active?'#ff0':'#000';
-      ctx.fillText((i===active?'> ':'  ')+p.name+' Lv'+p.lvl, 8, y);
-      ctx.fillStyle='#0a0';
-      var barW = Math.floor((p.hp/p.max)*40);
-      ctx.fillRect(8, y+4, barW, 4);
-      ctx.fillStyle='#000';
-      ctx.fillText(p.hp+'/'+p.max, 52, y+8);
+    ctx.fillStyle='#000'; ctx.font='9px monospace';
+    ctx.fillText('PARTY', 8, 14);
+    var p = party[active];
+    if(p){
+      ctx.fillText(p.name+' Lv'+p.lvl, 8, 30);
+      ctx.fillText('Type: '+(TYPES[p.species]||'normal'), 8, 42);
+      ctx.fillText('HP '+p.hp+'/'+p.max+'  ATK '+p.atk+'  DEF '+(p.def||0), 8, 54);
+      ctx.fillText('Moves:', 8, 68);
+      var ms = p.moves||[];
+      for(var mi=0; mi<ms.length; mi++){
+        var md = MOVES[ms[mi]]||{};
+        ctx.fillText('  '+ms[mi]+' ['+(md.type||'')+']', 8, 80+mi*10);
+      }
+      if(p.held) ctx.fillText('Held: '+p.held, 8, 120);
     }
-    ctx.fillText('A: Summary  B: Back', 8, h-8);
+    ctx.fillText('B: Back', 8, h-8);
   }
 
 function draw(){
