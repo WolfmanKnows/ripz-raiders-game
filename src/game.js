@@ -22,7 +22,7 @@ var sprites = {};
   var ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  var TILE = 32, scale = 1;
+  var TILE = 64, scale = 1;
   var px = 4*TILE, py = 4*TILE, facing = 0, frame = 0, zone = 'plaza';
   var party = [{name:'Hootling', hp:24, max:24, atk:10, def:5, lvl:5, xp:0, moves:['Peck','Gust'], shiny:false, held:'Berry'}];
 
