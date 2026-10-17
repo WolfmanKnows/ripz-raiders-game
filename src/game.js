@@ -413,6 +413,7 @@
       g.weather = m.outdoor ? (Math.random() < 0.62 ? "clear" : Math.random() < 0.55 ? "rain" : "wind") : "clear";
       g.toast = { text: m.name, t: 2.2 };
       R.saveGame();
+      queueStoreRaid();
     }
   };
 
@@ -621,6 +622,36 @@
     });
   }
 
+  var STORE_RAIDS = {
+    mart: { name: "FLIP", packs: 2, packId: "pack", reward: 40, team: [["scalplet", 6]] },
+    pack_bar: { name: "SNATCH", packs: 2, packId: "pack", reward: 36, team: [["scalplet", 5]] },
+    shelf_mart: { name: "HOARD", packs: 2, packId: "pack", reward: 90, team: [["scalplet", 15], ["scalplet", 16]] },
+    harbor_mart: { name: "RAKE", packs: 2, packId: "chromepack", reward: 160, team: [["resale", 24], ["scalplet", 23]] },
+  };
+  function queueStoreRaid() {
+    var id = R.G.map && R.G.map.id;
+    var raid = STORE_RAIDS[id];
+    if (!raid || R.G.flags["scalp_" + id]) return;
+    if (!R.G.flags.got_starter) return;
+    if (!R.G.party.some(function (m) { return m.hp > 0; })) return;
+    var sad = R.G.flags["sad_" + id];
+    var lines = sad
+      ? [raid.name + " is back on the restock.", "Last time the line left with nothing. This case is next."]
+      : [raid.name + " has both arms around the new case.", "The line is waiting. If this one pays market, nobody else rips today."];
+    say(lines, function () {
+      startTrainer({
+        name: raid.name,
+        flag: "scalp_" + id,
+        reward: raid.reward,
+        team: raid.team,
+        store: id,
+        packs: raid.packs,
+        packId: raid.packId,
+        win: ["Empty hands. I don't do lines. I end them."],
+      });
+    });
+  }
+
   function interact() {
     var f = step(R.G.player.x, R.G.player.y, R.G.player.dir);
     var n = npcAt(f.x, f.y);
@@ -647,7 +678,18 @@
     if (n.role === "prof") return talkProf();
     if (n.role === "mom") return talkMom();
     if (n.role === "heal") return talkHeal();
-    if (n.role === "mart") return openShop(n.shop || "mart");
+    if (n.role === "mart") {
+      var sid = R.G.map.id;
+      if (R.G.flags["scalp_" + sid] && !R.G.flags["scalp_thanks_" + sid]) {
+        R.G.flags["scalp_thanks_" + sid] = 1;
+        R.saveGame();
+        say(n.name + ": The line got their packs. Counter's open. SWAP only.", function () {
+          openShop(n.shop || "mart");
+        });
+        return;
+      }
+      return openShop(n.shop || "mart");
+    }
     if (n.role === "bartender") return talkBar();
     if (n.role === "deep") return talkDeep();
     if (n.role === "trainer" || n.role === "static") return talkTrainer(n, false);
@@ -1147,6 +1189,9 @@
       badge: opts.badge,
       win: opts.win,
       catchable: !!opts.catchable,
+      store: opts.store || null,
+      packs: opts.packs || 0,
+      packId: opts.packId || "pack",
     });
   }
   function startBattle(opts) {
@@ -1166,6 +1211,9 @@
       badge: opts.badge || 0,
       win: opts.win || [],
       catchable: opts.kind === "wild" || opts.catchable,
+      store: opts.store || null,
+      packs: opts.packs || 0,
+      packId: opts.packId || "pack",
       phase: "command",
       cmd: 0,
       moveI: 0,
@@ -1519,6 +1567,14 @@
     lines.push("Received " + (b.reward || 0) + " SWAP.");
     if (b.badge) lines.push(R.BADGE_NAMES[b.badge - 1] + " earned.");
     if (b.badge === 3) lines.push("The region stays open. Fill the dex.");
+    if (b.store && b.packs) {
+      delete R.G.flags["sad_" + b.store];
+      var pid = b.packId || "pack";
+      R.G.bag[pid] = (R.G.bag[pid] || 0) + b.packs;
+      var pname = R.ITEMS[pid] ? R.ITEMS[pid].name : "pack";
+      lines.push("The scalper gets nothing. Every owlie still in line gets a " + pname + ".");
+      lines.push(b.packs + " landed in your bag.");
+    }
     R.G.battle = null;
     R.G.ui = null;
     R.G.scene = "overworld";
@@ -1532,6 +1588,8 @@
     R.saveGame();
   }
   function blackout() {
+    var store = R.G.battle && R.G.battle.store;
+    if (store) R.G.flags["sad_" + store] = 1;
     clearArms();
     var loss = Math.min(R.G.swap, Math.max(0, Math.floor(R.G.swap * 0.08)));
     R.G.swap -= loss;
@@ -1541,7 +1599,9 @@
     R.G.scene = "overworld";
     var h = R.G.lastHeal || { map: "player_house", x: 7, y: 7 };
     R.setMap(h.map, h.x, h.y);
-    say("You dropped " + loss + " SWAP in the scuffle and woke up patched. Cheaper than buying the chase back.");
+    say(store
+      ? "The scalper clears the case. The line walks out empty-handed. You dropped " + loss + " SWAP and woke up patched."
+      : "You dropped " + loss + " SWAP in the scuffle and woke up patched. Cheaper than buying the chase back.");
   }
 
   function tickHp(dt) {
