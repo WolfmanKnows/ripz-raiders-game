@@ -746,14 +746,21 @@ msgs.push('Got it!');
 
 function drawTitle(){
     var w=canvas.width, h=canvas.height;
-    ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle='#e8c547'; ctx.font='bold 16px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('RIPZ RAIDERS', w/2, 40);
-    ctx.fillStyle='#fff'; ctx.font='10px sans-serif';
-    ctx.fillStyle='#fff'; ctx.font='8px monospace';
-    ctx.fillText('TAKE YOUR SHOT!', w/2, 55);
-    ctx.fillText('A - New Game', w/2, 90);
-    ctx.fillText('B - Continue', w/2, 105);
+    // bg
+    var grd = ctx.createLinearGradient(0,0,0,h);
+    grd.addColorStop(0,'#0a0a1a'); grd.addColorStop(1,'#1a1a2a');
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+    // title
+    ctx.fillStyle='#e8c547'; ctx.font='bold 28px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('RIPZ RAIDERS', w/2, h*0.35);
+    ctx.fillStyle='#fff'; ctx.font='14px sans-serif';
+    ctx.fillText('TAKE YOUR SHOT!', w/2, h*0.45);
+    // options
+    ctx.fillStyle='#ccc'; ctx.font='12px sans-serif';
+    ctx.fillText('A  New Game', w/2, h*0.65);
+    ctx.fillText('B  Continue', w/2, h*0.75);
+    ctx.fillStyle='#666'; ctx.font='8px sans-serif';
+    ctx.fillText('ohhTCG', w/2, h-20);
     ctx.textAlign='left';
   }
 
