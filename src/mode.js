@@ -6,9 +6,9 @@
   window.RIPZ_MODE = isKiosk ? 'kiosk' : 'web';
   document.documentElement.classList.add(window.RIPZ_MODE);
 
-  // Kiosk: idle reset
+  // Kiosk: idle reset with longer timeout for better play
   if (isKiosk) {
-    var idleMs = 90000;
+    var idleMs = 120000; // 2 minutes
     var idleTimer = null;
     function resetIdle(){
       clearTimeout(idleTimer);
@@ -17,17 +17,25 @@
         else location.reload();
       }, idleMs);
     }
-    ['touchstart','mousedown','keydown'].forEach(function(ev){
+    ['touchstart','mousedown','keydown','pointerdown'].forEach(function(ev){
       document.addEventListener(ev, resetIdle, {passive:true});
     });
     resetIdle();
   }
 
-  // Fullscreen hint for kiosk
+  // Fullscreen for kiosk on first interaction
   if (isKiosk && document.documentElement.requestFullscreen) {
+    var fsOnce = false;
     document.addEventListener('click', function once(){
-      document.documentElement.requestFullscreen().catch(function(){});
-      document.removeEventListener('click', once);
-    }, {once:true});
+      if (!fsOnce) {
+        document.documentElement.requestFullscreen().catch(function(){});
+        fsOnce = true;
+      }
+    }, {once:false});
+  }
+
+  // Web mode: optional welcome or other enhancements
+  if (!isKiosk) {
+    console.log('RIPZ Raiders web mode active');
   }
 })();
