@@ -5,10 +5,10 @@
   var c, ctx;
   var TILE = 64;
   var INTRO = [
-    "Okay. You're the Owlie. I'm the narration. We both know it.",
-    "Scalpers want the story, not your cash. Cash is banned. I will not let it go.",
-    "Professor Marlowe is west of the plaza, doing the tutorial with a straight face.",
-    "TAKE YOUR SHOT. Yes, you press A. I'm helpful and unbearable.",
+    "The foil district prices like the group chat is the economy.",
+    "Scalpers only eat if someone pays. A loud man with good hair taught the timeline that.",
+    "Professor Marlowe is west of the plaza. He wants a partner, not a thumbnail.",
+    "TAKE YOUR SHOT. SWAP only. Cash is a Logan thing.",
   ];
   var KEYS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").concat(["DEL", "OK"]);
 
@@ -369,9 +369,9 @@
         R.G.scene = "overworld";
         R.G.flags.mom_hi = 1;
         say([
-          "MA: There you are. I was about to break the fourth wall myself.",
-          "MA: Marlowe's lab. West side. Gold machines. The quest log is already screaming.",
-          "MA: Rip pack, berries, SWAP only. Cash is a bit. We don't do bits.",
+          "MA: There you are. Marlowe's lab is west. Gold machines, no camera crew.",
+          "MA: Rip pack and berries in the bag. SWAP only. We don't do friends-and-family.",
+          "MA: Deep Pocket is out on the night road with a sealed case and a speech.",
           "MA: TAKE YOUR SHOT.",
         ]);
         R.saveGame();
@@ -515,7 +515,7 @@
         R.G.flags[it.flag] = 1;
         R.G.bag[it.id] = (R.G.bag[it.id] || 0) + it.n;
         R.sfx("item");
-        say("Picked up " + it.n + " " + R.ITEMS[it.id].name + ". The grass was keeping it warm.");
+        say("Picked up " + it.n + " " + R.ITEMS[it.id].name + ". Left in the grass by someone chasing a thumbnail.");
         R.saveGame();
         return true;
       }
@@ -598,25 +598,25 @@
   }
   function rivalRoute() {
     var base = R.G.starter || "hootling";
-    say(["VEX slides onto the path. Yes, the one you were walking.", "Cute plaza win. The trail is a different rip."], function () {
+    say(["VEX cuts you off like he reserved the path.", "Cute plaza win. Out here people pay market and call it a personality."], function () {
       startTrainer({
         name: "VEX",
         flag: "rival_route1",
         reward: 90,
         team: [[R.lineStage(base, 0), 11], ["scalplet", 10]],
-        win: ["Remember this spot. I get louder from here. The writers insisted."],
+        win: ["Remember this spot. I get louder from here. It's the Logan method."],
       });
     });
   }
   function rivalHarbor() {
     var base = R.G.starter || "hootling";
-    say(["VEX is waiting by the lamps. Scheduled, and still creepy.", "Harbor air. My team got meaner. Still no cash. I checked with the sign."], function () {
+    say(["VEX is by the lamps, holding a case he will not open.", "Harbor air. My team got meaner. Still no cash. I'm a scalper, not a checkout page."], function () {
       startTrainer({
         name: "VEX",
         flag: "rival_harbor",
         reward: 220,
         team: [[R.lineStage(base, 1), 22], ["resale", 21], ["scalplet", 20]],
-        win: ["Spire's next. I'll be standing on the script tile either way."],
+        win: ["Spire's next. Bring a story. The loud one already bought the thumbnail."],
       });
     });
   }
@@ -649,37 +649,38 @@
     if (n.role === "heal") return talkHeal();
     if (n.role === "mart") return openShop(n.shop || "mart");
     if (n.role === "bartender") return talkBar();
+    if (n.role === "deep") return talkDeep();
     if (n.role === "trainer" || n.role === "static") return talkTrainer(n, false);
     var lines = n.lines || ["..."];
     say(lines.map(function (l) { return n.name + ": " + l; }));
   }
   function talkMom() {
     var lines = R.G.flags.got_starter
-      ? ["Lab light's still on. Marlowe loves a monologue.", "Want me to patch the team? It's free. I'm the nice tutorial."]
-      : ["Marlowe's lab. Gold machines. West of the main street.", "TAKE YOUR SHOT — after you have a partner. Order of operations. I'm a mom."];
+      ? ["Lab light's on. Marlowe grades stories, not slabs.", "Want the team patched? Free. Cheaper than a Logan box break."]
+      : ["Marlowe's lab. Gold machines. West of the main street.", "Get a partner before the trail. A thumbnail is not a team."];
     say(lines.map(function (l) { return "MA: " + l; }), function () {
       if (!R.G.flags.got_starter) return;
       choice("Rest the team?", [
-        { label: "Yes", cb: function () { healAll(); R.G.lastHeal = { map: "player_house", x: 7, y: 7 }; say("MA: All keyed up. Go be a problem."); } },
+        { label: "Yes", cb: function () { healAll(); R.G.lastHeal = { map: "player_house", x: 7, y: 7 }; say("MA: All keyed up. Go make a bad decision at market price."); } },
         { label: "No", cb: function () {} },
       ]);
     });
   }
   function talkHeal() {
-    say(R.G.map.name + " — SABLE: Need a tune-up? SWAP stays in your pocket. I heal for the bit.", function () {
+    say(R.G.map.name + " — SABLE: Tune-up? You look like a rip-and-ship that went long. SWAP stays put.", function () {
       choice("Patch every raider?", [
         { label: "Yes", cb: function () {
           healAll();
           R.G.lastHeal = { map: R.G.map.id, x: R.G.player.x, y: R.G.player.y };
           R.sfx("item");
-          say("Your raiders look fight-ready. Try not to immediately walk into tall grass. You will.");
+          say("Patched. Try not to pay market for the next loss.");
         } },
         { label: "No", cb: function () {} },
       ]);
     });
   }
   function talkBar() {
-    say(["JUNO: Pack Bar. Rips cost SWAP. Never cash. I have a sign, a speech, and a stare.", "Packs in the bag rip right here. The machine is nosy. So am I."], function () {
+    say(["JUNO: Pack Bar. We rip for SWAP. Chat is not here to tell you the pull.", "Logan can buy the hobby. He still can't pay cash at this counter."], function () {
       choice("What'll it be?", [
         { label: "Shop", cb: function () { openShop("bar"); } },
         { label: "Rip a pack", cb: ripFromBag },
@@ -689,7 +690,7 @@
   }
   function talkProf() {
     if (!R.G.flags.got_starter) {
-      say(["MARLOWE: I am Professor Marlowe. This is the part where I pretend I don't see you.", "The routes grew teeth. Foil ghosts, packrats, tide things. Very scientific.", "Pick a partner. I will not choose for you. That's the one choice that matters."], function () {
+      say(["MARLOWE: I am Professor Marlowe. The routes grew teeth. Foil ghosts, packrats, and people who know a guy.", "Pick a partner. I will not choose for you. That's the only pull that isn't a gamble."], function () {
         choice("Who keys to you?", [
           { label: "Hootling", cb: function () { giveStarter("hootling"); } },
           { label: "Nestling", cb: function () { giveStarter("nestling"); } },
@@ -699,10 +700,10 @@
       return;
     }
     if (!R.G.flags.rival_lab) {
-      say("MARLOWE: Vex is still in the doorway. Finish the shot. I'll hold the exposition.");
+      say("MARLOWE: Vex is still in the doorway, practicing his influencer voice.");
       return;
     }
-    say("MARLOWE: The dex fills when you catch. Bring stories, not receipts. Receipts make me faint.");
+    say("MARLOWE: The dex fills when you catch. Don't bring me a receipt from a fractional slab.");
   }
   function giveStarter(id) {
     var mon = R.createMon(id, 5, { shiny: false });
@@ -712,13 +713,13 @@
     R.G.dexS[id] = 1;
     R.G.dexC[id] = 1;
     say(mon.name + " is keyed to you.", function () {
-      say(["VEX shoves the curtain.", "Cute. I took the one that eats yours. Type chart. Look it up, or suffer."], function () {
+      say(["VEX shoves the curtain.", "Cute. I took the counter. Not everything is a chase you can buy."], function () {
         startTrainer({
           name: "VEX",
           flag: "rival_lab",
           reward: 40,
           team: [[R.counterStarter(id), 5]],
-          win: ["Tch. Enjoy the plaza. I'll be on the trail, practicing this speech."],
+          win: ["Tch. Enjoy the plaza. I'll be on the trail telling people I called it."],
         });
       });
     });
@@ -743,23 +744,55 @@
       });
     });
   }
+  function talkDeep() {
+    if (R.G.flags.deep_open) {
+      say(["DEEP: You opened it. The hit was a code card and a lesson.", "Logan would've cropped the code card out and posted the scream anyway."]);
+      return;
+    }
+    if (R.G.flags.deep_sealed) {
+      say(["DEEP: Still sealed. The pockets thank you.", "The energy-drink guy would've ripped it for a thumbnail and a shrug."]);
+      return;
+    }
+    say([
+      "DEEP: Deep Pocket Monster. The pockets are deep. The prices are the people paying them.",
+      "A sealed case just fell out. Open it, or leave it sealed like you have a spine.",
+      "If a guy named Logan offers you a slice of a slab, that is not a partnership.",
+    ], function () {
+      choice("The case hits the dirt.", [
+        { label: "Open it", cb: function () {
+          R.G.flags.deep_open = 1;
+          R.G.bag.pack = (R.G.bag.pack || 0) + 1;
+          R.sfx("item");
+          R.saveGame();
+          say(["The case pops. One Rip Pack. Zero thumbnail.", "DEEP: Chat would've called that bulk. Chat is not here. Lucky you."]);
+        } },
+        { label: "Keep sealed", cb: function () {
+          R.G.flags.deep_sealed = 1;
+          R.G.bag.charm = (R.G.bag.charm || 0) + 1;
+          R.sfx("item");
+          R.saveGame();
+          say(["DEEP: Sealed. Correct. The market just nodded.", "Take a Quiet Charm. Logan would've opened it, missed, and blamed the printer."]);
+        } },
+      ]);
+    });
+  }
   function tryField(x, y, t) {
     if (t === R.T.BRAMBLE) {
       if (!R.G.flags.badge1 || !partyHas("GALE")) {
-        say("Bramble. Gust Sweep needs the Ember Crest and a gale raider. I'm a bush with prerequisites.");
+        say("Bramble. Gust Sweep needs the Ember Crest and a gale raider. Sealed product doesn't cut brush.");
         return;
       }
       choice("Gust Sweep the bramble?", [
-        { label: "Yes", cb: function () { cutTile(x, y); say("The bramble peels back. Nature hates a well-timed badge."); } },
+        { label: "Yes", cb: function () { cutTile(x, y); say("The bramble peels back. That's a hit."); } },
         { label: "No", cb: function () {} },
       ]);
     } else {
       if (!R.G.flags.badge2 || !partyHas("STONE")) {
-        say("A cracked rock. Stone Smash needs the Brine Seal and a stone raider. Geology, but make it a gate.");
+        say("A cracked rock. Stone Smash needs the Brine Seal and a stone raider. You can't grade your way through it.");
         return;
       }
       choice("Stone Smash?", [
-        { label: "Yes", cb: function () { cutTile(x, y); say("The rock gives. Don't thank it. It lost."); } },
+        { label: "Yes", cb: function () { cutTile(x, y); say("The rock gives. Market correction."); } },
         { label: "No", cb: function () {} },
       ]);
     }
@@ -802,7 +835,7 @@
     if (pressA()) {
       var id = s.ids[s.i];
       var it = R.ITEMS[id];
-      if (R.G.swap < it.price) say("Not enough SWAP. Battles pay. Cash does not. I will die on this small hill.");
+      if (R.G.swap < it.price) say("Not enough SWAP. Battles pay. Cash does not. This isn't a Logan checkout.");
       else {
         R.G.swap -= it.price;
         R.G.bag[id] = (R.G.bag[id] || 0) + 1;
@@ -882,7 +915,7 @@
       R.sfx("tap");
       if (rip.phase > 4) {
         R.G.scene = "overworld";
-        say("That's the rip. TAKE YOUR SHOT again when you want — SWAP only. The machine winked.");
+        say("That's the rip. No thumbnail. TAKE YOUR SHOT again when you want — SWAP only.");
       }
     }
   }
@@ -956,7 +989,7 @@
         else if (pick === "Bag") R.G.ui = { type: "bag", i: 0 };
         else if (pick === "Dex") R.G.ui = { type: "dex", i: 0 };
         else if (pick === "Card") { R.G.ui = null; R.openCard(); }
-        else if (pick === "Save") { R.saveGame(); say("Progress saved on this device. The cloud is a rumor. I live in your pocket now."); R.G.ui = null; }
+        else if (pick === "Save") { R.saveGame(); say("Progress saved on this device. Not on a fractional marketplace."); R.G.ui = null; }
         else { R.G.mute = !R.G.mute; R.G.ui = null; }
       }
       return;
@@ -1508,7 +1541,7 @@
     R.G.scene = "overworld";
     var h = R.G.lastHeal || { map: "player_house", x: 7, y: 7 };
     R.setMap(h.map, h.x, h.y);
-    say("You dropped " + loss + " SWAP in the scuffle and woke up patched. TAKE YOUR SHOT again. The fade did its best.");
+    say("You dropped " + loss + " SWAP in the scuffle and woke up patched. Cheaper than buying the chase back.");
   }
 
   function tickHp(dt) {

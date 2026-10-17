@@ -108,7 +108,7 @@
     clearout: sp("clearout", "Clearout", ["GALE"], [50, 64, 44, 80], 150, 50, null, L([[1, "gust"], [1, "peck"], [8, "aircut"], [14, "dazedust"]]), "Blows through a booth at closing time."),
     bulkbuyer: sp("bulkbuyer", "Bulkbuyer", ["MYTH"], [104, 84, 92, 52], 28, 100, null, L([[1, "gleam"], [1, "foilslam"], [12, "mythray"], [22, "boulder"]]), "Rare. Pays in presence, never in cash."),
     resale: sp("resale", "Resale", ["METAL"], [64, 84, 72, 74], 90, 64, null, L([[1, "clang"], [1, "tackle"], [8, "foilslam"], [14, "gleam"]]), "Vex's favorite. Shiny, impatient, loud."),
-    scalplet: sp("scalplet", "Scalplet", ["SHADE", "METAL"], [54, 72, 50, 66], 90, 58, null, L([[1, "hex"], [1, "clang"], [6, "nightbind"], [12, "foilslam"]]), "A small scalper-spirit. It does not get your money."),
+    scalplet: sp("scalplet", "Scalplet", ["SHADE", "METAL"], [54, 72, 50, 66], 90, 58, null, L([[1, "hex"], [1, "clang"], [6, "nightbind"], [12, "foilslam"]]), "A small scalper-spirit. It only eats if someone pays market."),
   };
   R.DEX_ORDER = Object.keys(R.SPECIES);
 
