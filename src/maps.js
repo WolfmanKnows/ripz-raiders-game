@@ -72,17 +72,17 @@
   plaza.set(24, 16, T.LAMP);
   plaza.set(14, 27, T.LAMP);
   plaza.set(16, 11, T.SIGN);
-  plaza.signs.push({ x: 16, y: 11, text: "HOOT PLAZA — Owlies only. SWAP, never cash. TAKE YOUR SHOT." });
+  plaza.signs.push({ x: 16, y: 11, text: "HOOT PLAZA — Owlies only. SWAP, never cash. The sign knows you're reading it. TAKE YOUR SHOT." });
   [18, 19, 20, 21].forEach(function (x) {
-    plaza.warps.push({ x: x, y: 0, to: "route1", tx: 6 + (x - 18), ty: 45, needFlag: "got_starter", deny: "Professor Marlowe is waiting in the lab. Grab a partner first." });
+    plaza.warps.push({ x: x, y: 0, to: "route1", tx: 6 + (x - 18), ty: 45, needFlag: "got_starter", deny: "Professor Marlowe is waiting in the lab. Grab a partner first. Yes, the gate is stopping you. Rude, but correct." });
   });
   plaza.npcs.push({
     id: "kid", name: "PIP", kind: "kid", x: 10, y: 15, dir: 0, role: "chat",
-    lines: ["Vex keeps saying the routes are sold out.", "They are not. The grass is full of raiders."],
+    lines: ["Vex keeps yelling that the routes are sold out.", "They're not. The grass is full of raiders. Vex just hates sharing a camera."],
   });
   plaza.npcs.push({
     id: "fan", name: "NIA", kind: "owlie", x: 11, y: 25, dir: 1, role: "chat",
-    lines: ["Pack Bar's through that gold door.", "Rips cost SWAP. Nobody here takes a card or cash."],
+    lines: ["Pack Bar's that gold door. I'd point, but my sprite only has four angles.", "Rips cost SWAP. Flash a card and Juno laughs you into next week."],
   });
   maps.plaza = plaza;
 
@@ -112,9 +112,9 @@
     flag: "rival_lab", reward: 40, sight: 0,
     show: function (f) { return !!f.got_starter && !f.rival_lab; },
     team: function (g) { return [[R.counterStarter(g.starter), 5]]; },
-    intro: ["Still here? Fine. TAKE YOUR SHOT."],
-    win: ["Tch. The trail is mine next."],
-    lines: ["You got lucky in the curtain light."],
+    intro: ["Still here? The curtain light is doing a lot of work for both of us."],
+    win: ["Tch. The trail is mine next. I'll be monologuing the whole way."],
+    lines: ["You got lucky. Also you pressed the buttons. I saw you."],
   });
   maps.lab = lab;
 
@@ -152,7 +152,7 @@
   rhouse.warps.push({ x: 6, y: 8, to: "plaza", tx: 30, ty: 32 });
   rhouse.npcs.push({
     id: "vexmom", name: "REN", kind: "owlie", x: 4, y: 4, dir: 0, role: "chat",
-    lines: ["Vex talks a big rip and sleeps through breakfast.", "Beat them fair. No cash bets in this house."],
+    lines: ["Vex talks a big rip and sleeps through breakfast. Heroic.", "Beat them fair. No cash bets. I will say it until the credits."],
   });
   maps.rival_house = rhouse;
 
@@ -192,16 +192,16 @@
     id: "ace", name: "ACE", kind: "kid", x: 4, y: 18, dir: 3, role: "trainer",
     flag: "t_r1_ace", reward: 60, sight: 3, range: 3,
     team: function () { return [["packrat", 6], ["foilghost", 6]]; },
-    intro: ["This trail is my case. Hands off the foils."],
-    win: ["Okay, okay. Your sleeves are cleaner."],
-    lines: ["I will restock. With SWAP. Not yours."],
+    intro: ["This trail is my case. Hands off the foils. Yes, I walked up. Sight range. Scary."],
+    win: ["Okay, okay. Your sleeves are cleaner. Don't put it on a sign."],
+    lines: ["I'll restock with SWAP. Not yours. Stop looking at my bag."],
   });
   r1.scripts.push({
     x: 6, y: 22, w: 4, h: 1, flag: "rival_route1",
     start: "rival_route",
   });
   r1.set(5, 10, T.SIGN);
-  r1.signs.push({ x: 5, y: 10, text: "FOIL TRAIL — tall grass hides raiders. Bramble hates a gale." });
+  r1.signs.push({ x: 5, y: 10, text: "FOIL TRAIL — tall grass hides raiders. Bramble hates a gale. The sign is doing quest design." });
   maps.route1 = r1;
 
   /* ---------- Shelfburg ---------- */
@@ -215,7 +215,7 @@
   shelf.rect(14, 28, 6, 1, T.PATH);
   shelf.rect(34, 13, 2, 4, T.PATH);
   shelf.set(12, 13, T.SIGN);
-  shelf.signs.push({ x: 12, y: 13, text: "SHELFBURG GYM — east door. Leader SCORCH. East gate wants the Ember Crest." });
+  shelf.signs.push({ x: 12, y: 13, text: "SHELFBURG — Scorch's gym is the west building. East gate wants the Ember Crest. The old sign said east. It was wrong." });
   shelf.set(20, 16, T.LAMP);
   [14, 15, 16, 17].forEach(function (x, i) {
     shelf.warps.push({ x: x, y: 28, to: "route1", tx: 6 + i, ty: 1 });
@@ -227,16 +227,16 @@
     shelf.warps.push({
       x: 35, y: y, to: "route2", tx: 1, ty: 7 + (y - 14),
       needFlag: "badge1",
-      deny: "Gate Owlie taps the post. Ember Crest, then the coast.",
+      deny: "Gate Owlie taps the post. Ember Crest, then the coast. I don't make the rules. I stand on the warp.",
     });
   });
   shelf.npcs.push({
     id: "guide1", name: "QUILL", kind: "gate", x: 33, y: 12, dir: 0, role: "chat",
-    lines: ["Scorch runs the gym in the west building.", "Gust Sweep opens after the crest. Stone Smash waits on a later seal."],
+    lines: ["Scorch is in the west building, being a gym leader about it.", "Gust Sweep opens after the crest. Stone Smash waits on a later seal. I'm a tutorial with boots."],
   });
   shelf.npcs.push({
     id: "local", name: "BEE", kind: "owlie", x: 10, y: 16, dir: 3, role: "chat",
-    lines: ["Shelfburg used to be a stockroom.", "Now the stock fights back."],
+    lines: ["Shelfburg used to be a stockroom.", "Now the stock fights back. Inventory with opinions. Relatable."],
   });
   maps.shelfburg = shelf;
 
@@ -265,25 +265,25 @@
     id: "g1a", name: "CINN", kind: "kid", x: 4, y: 9, dir: 3, role: "trainer",
     flag: "t_g1a", reward: 80, sight: 3, range: 4,
     team: function () { return [["ripkit", 11], ["sparkmite", 11]]; },
-    intro: ["Warm-up pull. Don't whiff."],
-    win: ["Scorch is hotter than me."],
-    lines: ["I need a berry and a nap."],
+    intro: ["Warm-up pull. Don't whiff. The real boss is north and way too confident."],
+    win: ["Scorch is hotter than me. That's not a bit. That's a warning."],
+    lines: ["I need a berry, a nap, and whoever wrote this encounter to relax."],
   });
   gym1.npcs.push({
     id: "g1b", name: "FLINT", kind: "owlie", x: 13, y: 7, dir: 2, role: "trainer",
     flag: "t_g1b", reward: 90, sight: 2, range: 4,
     team: function () { return [["ripper", 13]]; },
-    intro: ["Foil burns if you hesitate."],
-    win: ["Crest's that way."],
-    lines: ["Nice shot."],
+    intro: ["Foil burns if you hesitate. Also if you don't. Fire is rude."],
+    win: ["Crest's that way. I'm pointing with my whole face."],
+    lines: ["Nice shot. I'm only saying it once. Screenshot it."],
   });
   gym1.npcs.push({
     id: "scorch", name: "SCORCH", kind: "leader", x: 9, y: 5, dir: 0, role: "trainer",
     flag: "badge1", reward: 280, sight: 0, badge: 1,
     team: function () { return [["ripper", 15], ["ripkit", 14], ["voltowl", 15]]; },
-    intro: ["I am Scorch. Show me you can finish a box, not just open it."],
-    win: ["Ember Crest is yours. Bramble bows to gale now.", "Harbor is past the east gate. Brine is wet and rude."],
-    lines: ["The crest looks right on an Owlie."],
+    intro: ["I am Scorch. Finish the box. Opening it is the easy part, and yes I heard the pun."],
+    win: ["Ember Crest is yours. Bramble bows to gale now.", "Harbor is past the east gate. Brine is wet, rude, and aware of the camera."],
+    lines: ["The crest looks right on an Owlie. Don't let it go to the HUD."],
   });
   maps.gym1 = gym1;
 
@@ -306,7 +306,7 @@
   r2.set(21, 1, T.TREE);
   r2.items.push({ x: 21, y: 2, id: "chromeball", n: 3, flag: "it_r2_chrome" });
   r2.set(8, 5, T.SIGN);
-  r2.signs.push({ x: 8, y: 5, text: "CHROME COAST — tide raiders in the grass. Rocks want the Brine Seal and a stone arm." });
+  r2.signs.push({ x: 8, y: 5, text: "CHROME COAST — tide raiders in the grass. Rocks want the Brine Seal and a stone arm. The sign tried to be serious." });
   r2.enc = [
     { id: "tideling", min: 12, max: 15, w: 22 },
     { id: "shelflick", min: 12, max: 15, w: 18 },
@@ -322,9 +322,9 @@
     id: "sailor", name: "BRIN", kind: "owlie", x: 18, y: 5, dir: 0, role: "trainer",
     flag: "t_r2_brin", reward: 120, sight: 0, range: 3,
     team: function () { return [["tideling", 14], ["shelflick", 14]]; },
-    intro: ["Coast tax. One battle."],
-    win: ["Keep your SWAP. I was joking about tax."],
-    lines: ["Harbor lights are east."],
+    intro: ["Coast tax. One battle. I almost said cash, then remembered the whole game would yell."],
+    win: ["Keep your SWAP. The tax was a bit. The loss is real."],
+    lines: ["Harbor lights are east. Follow the path. I'm not your map."],
   });
   maps.route2 = r2;
 
@@ -341,7 +341,7 @@
   harbor.house(18, 4, 8, 6, 21);
   harbor.house(4, 18, 9, 6, 8);
   harbor.set(12, 11, T.SIGN);
-  harbor.signs.push({ x: 12, y: 11, text: "FOIL HARBOR — Gym west. North road wants the Brine Seal." });
+  harbor.signs.push({ x: 12, y: 11, text: "FOIL HARBOR — Gym west. North road wants the Brine Seal. The sign had one job. It is not comedy." });
   harbor.set(16, 18, T.LAMP);
   harbor.warps.push({ x: 7, y: 8, to: "gym2", tx: 9, ty: 13 });
   harbor.warps.push({ x: 21, y: 9, to: "harbor_mart", tx: 7, ty: 9 });
@@ -353,13 +353,13 @@
     harbor.warps.push({
       x: x, y: 1, to: "route3", tx: 6 + (x - 15), ty: 33,
       needFlag: "badge2",
-      deny: "The dock master shakes their head. Brine Seal first.",
+      deny: "The dock master shakes their head. Brine Seal first. North is a cutscene you haven't earned.",
     });
   });
   harbor.rect(15, 0, 2, 1, T.PATH);
   harbor.npcs.push({
     id: "dock", name: "MARL", kind: "gate", x: 18, y: 3, dir: 0, role: "chat",
-    lines: ["North is Night Rip Road.", "Vex already bragged their way toward the Spire."],
+    lines: ["North is Night Rip Road. Spooky on purpose.", "Vex already bragged their way toward the Spire. Volume is their whole build."],
   });
   harbor.scripts.push({ x: 14, y: 20, w: 4, h: 1, flag: "rival_harbor", start: "rival_harbor" });
   maps.harbor = harbor;
@@ -388,17 +388,17 @@
     id: "g2a", name: "KELP", kind: "owlie", x: 4, y: 11, dir: 3, role: "trainer",
     flag: "t_g2a", reward: 140, sight: 3, range: 4,
     team: function () { return [["tideling", 20], ["brineback", 21]]; },
-    intro: ["Mind the slick boards."],
-    win: ["Brine is at the north rug."],
-    lines: ["Salt in the sleeves. Classic."],
+    intro: ["Mind the slick boards. If you fall in, that's a you problem, and also not coded."],
+    win: ["Brine is at the north rug, practicing their entrance."],
+    lines: ["Salt in the sleeves. Classic. I say classic so it sounds like I meant it."],
   });
   gym2.npcs.push({
     id: "brine", name: "BRINE", kind: "leader", x: 9, y: 4, dir: 0, role: "trainer",
     flag: "badge2", reward: 420, sight: 0, badge: 2,
     team: function () { return [["brineback", 24], ["tideling", 22], ["shelfbreaker", 24]]; },
-    intro: ["Brine. The harbor doesn't do refunds. It does rematches until you learn."],
-    win: ["Brine Seal. Stone Smash is yours.", "Night Rip Road is open. Vex is already loud up there."],
-    lines: ["Keep the seal dry. Joke. It can swim."],
+    intro: ["Brine. No refunds. Rematches until the lesson sticks. Hi, person holding the phone."],
+    win: ["Brine Seal. Stone Smash is yours.", "Night Rip Road is open. You'll hear Vex before the script fires."],
+    lines: ["Keep the seal dry. Joke. It can swim. I am the joke. The seal is fine."],
   });
   maps.gym2 = gym2;
 
@@ -428,17 +428,17 @@
     id: "shade", name: "UMBRA", kind: "rival", x: 4, y: 18, dir: 3, role: "trainer",
     flag: "t_r3_umbra", reward: 200, sight: 3, range: 3,
     team: function () { return [["spectowl", 26], ["foilghost", 25]]; },
-    intro: ["Night market rules. Winner walks."],
-    win: ["The Spire is lit. Don't sell the moment."],
-    lines: ["I fade. You don't."],
+    intro: ["Night market rules. Winner walks. Loser keeps the tile and a sad little line."],
+    win: ["The Spire is lit. Don't sell the moment. Cash is still illegal, even in the dark."],
+    lines: ["I fade. You don't. Main character privilege. Disgusting. Congrats."],
   });
   r3.npcs.push({
     id: "bulk", name: "BULK", kind: "leader", x: 12, y: 5, dir: 0, role: "static",
     flag: "static_bulk",
     show: function (f) { return !!f.badge2 && !f.static_bulk; },
     team: function () { return [["bulkbuyer", 30]]; },
-    intro: ["A Bulkbuyer regards you like a sealed case.", "It can be caught. TAKE YOUR SHOT."],
-    lines: ["The case is empty now."],
+    intro: ["A Bulkbuyer looks at you like a sealed case it already priced.", "It can be caught. TAKE YOUR SHOT. This is the one fight the game lets you rip."],
+    lines: ["The case is empty now. You're welcome, dex."],
   });
   maps.route3 = r3;
 
@@ -450,7 +450,7 @@
   vault.house(8, 2, 14, 7, 14);
   vault.rect(12, 22, 6, 1, T.PATH);
   vault.set(10, 12, T.SIGN);
-  vault.signs.push({ x: 10, y: 12, text: "VAULT SPIRE — Champion Aurelia. No buy-ins. No cash. Just the crown." });
+  vault.signs.push({ x: 10, y: 12, text: "VAULT SPIRE — Champion Aurelia. No buy-ins. No cash. Just the crown. The sign is tired of saying no cash." });
   vault.set(18, 14, T.LAMP);
   vault.set(11, 14, T.LAMP);
   [13, 14].forEach(function (x, i) {
@@ -459,7 +459,7 @@
   vault.warps.push({
     x: 14, y: 8, to: "champ", tx: 9, ty: 14,
     needFlag: "rival_vault",
-    deny: "Vex blocks the gold door. They want the last word.",
+    deny: "Vex blocks the gold door. They want the last word. And the camera. Mostly the camera.",
   });
   vault.npcs.push({
     id: "vexvault", name: "VEX", kind: "rival", x: 14, y: 11, dir: 0, role: "trainer",
@@ -469,9 +469,9 @@
       var base = g.starter || "hootling";
       return [[R.lineStage(base, 2), 31], ["resale", 30], ["spectowl", 29], ["scalplet", 28]];
     },
-    intro: ["Last stall, Owlie.", "I don't want your money. I want the story where I win."],
-    win: ["...Take the door.", "Aurelia doesn't blink. Don't you blink either."],
-    lines: ["Go on. The crown isn't my size anyway."],
+    intro: ["Last stall, Owlie.", "I don't want your money. The game won't let me take it. I want the story where I win."],
+    win: ["...Take the door.", "Aurelia doesn't blink. Don't you blink either. A still does the talking."],
+    lines: ["Go on. The crown isn't my size. I checked the mirror and the menu."],
   });
   maps.vault = vault;
 
@@ -488,9 +488,9 @@
     team: function () {
       return [["aureowl", 34], ["infernowl", 33], ["canopyrex", 33], ["spectowl", 32], ["hoardbeast", 32]];
     },
-    intro: ["Aurelia. Vault Spire.", "SHOW me the shot. Not a story about a shot."],
-    win: ["Vault Crown.", "The region stays open. Fill the dex. Rip honest packs. Never cash."],
-    lines: ["Champion Owlie. The foil looks good on you."],
+    intro: ["Aurelia. Vault Spire.", "SHOW me the shot. Not a story about a shot. The narration already did that."],
+    win: ["Vault Crown.", "Region stays open. Fill the dex. Rip honest packs. Never cash. I will not do a dance."],
+    lines: ["Champion Owlie. The foil looks good on you. Tell the menu. It loves badges."],
   });
   maps.champ = champ;
 
