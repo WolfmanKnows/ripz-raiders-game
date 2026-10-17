@@ -1199,6 +1199,7 @@
     g.scene = "battle";
     g.ui = null;
     g.busy = null;
+    g.toast = null;
     var pi = firstAlive();
     g.battle = {
       kind: opts.kind,
@@ -1227,7 +1228,10 @@
     opts.foes.forEach(function (m) { g.dexS[m.sid] = 1; m.dispHp = m.hp; });
     g.party.forEach(function (m) { if (m.dispHp == null) m.dispHp = m.hp; });
     var lead = opts.foes[0];
-    var line = opts.kind === "wild" ? "A wild " + lead.name + " showed up!" : opts.name + " sent out " + lead.name + "!";
+    var mine = g.party[pi];
+    var line = opts.kind === "wild"
+      ? "A wild " + lead.name + " showed up! Go, " + mine.name + "!"
+      : opts.name + " sent out " + lead.name + "! Go, " + mine.name + "!";
     say(line);
     R.sfx("start");
   }

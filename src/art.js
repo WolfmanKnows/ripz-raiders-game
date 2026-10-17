@@ -384,7 +384,8 @@
 
   function loadImg(url) {
     var img = new Image();
-    img.src = url;
+    var v = window.__RIPZ_BUILD || "";
+    img.src = v ? url + "?v=" + v : url;
     return img;
   }
 
