@@ -978,7 +978,7 @@
     var ui = R.G.ui;
     if (!ui) return;
     if (ui.type === "menu") {
-      var items = ["Party", "Bag", "Dex", "Card", "Save", R.G.mute ? "Sound on" : "Sound off", "Close"];
+      var items = ["Party", "Bag", "Dex", "Owlie Card", "Save", R.G.mute ? "Sound on" : "Sound off", "Close"];
       if (pressDir(1)) ui.i = (ui.i + items.length - 1) % items.length;
       if (pressDir(0)) ui.i = (ui.i + 1) % items.length;
       if (pressB()) { R.G.ui = null; return; }
@@ -988,7 +988,7 @@
         else if (pick === "Party") R.G.ui = { type: "party", i: 0 };
         else if (pick === "Bag") R.G.ui = { type: "bag", i: 0 };
         else if (pick === "Dex") R.G.ui = { type: "dex", i: 0 };
-        else if (pick === "Card") { R.G.ui = null; R.openCard(); }
+        else if (pick === "Owlie Card") { R.G.ui = null; R.openCard(); }
         else if (pick === "Save") { R.saveGame(); say("Progress saved on this device. Not on a fractional marketplace."); R.G.ui = null; }
         else { R.G.mute = !R.G.mute; R.G.ui = null; }
       }

@@ -158,6 +158,7 @@
     var learned = R.SPECIES[sid].learn.filter(function (row) { return row[0] <= level; }).map(function (row) { return row[1]; });
     var last = learned.slice(-4);
     if (!last.length) last = ["tackle"];
+    last.sort(function (a, b) { return (R.MOVES[b].power || 0) - (R.MOVES[a].power || 0); });
     return last.map(function (id) {
       return { id: id, pp: R.MOVES[id].pp, max: R.MOVES[id].pp };
     });
