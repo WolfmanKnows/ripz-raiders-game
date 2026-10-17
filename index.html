@@ -5,37 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>RIPZ Raiders — TAKE YOUR SHOT!</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0a0a0a; --gold:#e8c547; --gold-dark:#b8960f; --ink:#f5f5f5; --panel:#1a1a1acc; }
+  :root { --bg:#0a0a0a; --gold:#e8c547; --gold-dark:#b8960f; --ink:#f5f5f5; --panel:#1a1a1aee; }
   html, body { margin:0; padding:0; width:100%; height:100%; background:var(--bg); overflow:hidden; touch-action:none; font-family:Inter, system-ui, sans-serif; color:var(--ink); }
-  #wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#111,#000); }
-  canvas { image-rendering:pixelated; image-rendering:crisp-edges; background:#88c070; display:block; border:2px solid var(--gold); border-radius:8px; box-shadow:0 0 20px #000a; }
-  #ui { position:absolute; bottom:6px; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-end; padding:0 10px 4px; pointer-events:none; z-index:10; }
+  #wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at center, #1a1a1a 0%, #000 70%); }
+  canvas { image-rendering:pixelated; image-rendering:crisp-edges; background:#88c070; display:block; border:3px solid var(--gold); border-radius:10px; box-shadow:0 0 30px #e8c54755, 0 8px 24px #000a; }
+  #ui { position:absolute; bottom:8px; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-end; padding:0 12px 6px; pointer-events:none; z-index:10; }
   #dpad, #buttons { pointer-events:auto; }
-  #dpad { display:grid; grid-template-columns:60px 60px 60px; grid-template-rows:60px 60px 60px; gap:3px; }
-  #dpad button, #buttons button { width:68px; height:68px; font-size:22px; font-weight:700; background:linear-gradient(180deg,#333,#1a1a1a); color:#eee; border:4px solid var(--gold); border-radius:18px; touch-action:manipulation; box-shadow:0 6px 12px #0008, inset 0 2px 0 #fff4; transition:transform 0.1s; }
-  #dpad button:active, #buttons button:active { background:var(--gold); color:#000; transform:scale(0.92); }
-  #buttons { display:flex; gap:14px; align-items:center; }
-  #buttons button.a { background:linear-gradient(180deg,#ff6666,#cc3333); border-color:#ffaaaa; }
-  #buttons button.b { background:linear-gradient(180deg,#66aaff,#2266cc); border-color:#aaccff; }
-  #buttons button.s { background:linear-gradient(180deg,#44dd77,#229955); border-color:#77eeaa; width:96px; font-size:15px; }
-  #dialog { position:absolute; bottom:110px; left:12px; right:12px; background:linear-gradient(180deg,#ffffff,#e8e8e8); color:#111; border:5px solid var(--gold); border-radius:16px; padding:16px 20px; font-size:17px; line-height:1.5; display:none; z-index:20; pointer-events:auto; box-shadow:0 8px 24px #0009; }
-  #menu, #battleMenu { position:absolute; background:linear-gradient(180deg,#222,#0a0a0a); color:#fff; border:4px solid var(--gold); border-radius:16px; padding:12px; display:none; z-index:20; pointer-events:auto; box-shadow:0 10px 30px #000c; }
-  #menu { top:50px; right:16px; min-width:200px; max-height:70vh; overflow-y:auto; }
-  #battleMenu { bottom:130px; right:16px; min-width:190px; }
-  #menu div, #battleMenu div { padding:16px 20px; font-size:18px; border-radius:10px; margin:3px 0; }
-  #menu div.sel, #battleMenu div.sel { background:var(--gold); color:#000; font-weight:700; }
-  #miniMap { position:absolute; top:50px; right:12px; border:3px solid var(--gold); border-radius:6px; background:#000; z-index:15; image-rendering:pixelated; }
-  #questTracker { position:absolute; bottom:150px; left:12px; background:#0a0a0acc; color:#fff; border:3px solid var(--gold); border-radius:8px; padding:8px 12px; font-size:13px; z-index:15; max-width:160px; }
-  #questTracker .done { color:#6c6; }
-  #resourceBar { position:absolute; top:12px; right:90px; display:flex; gap:10px; z-index:15; }
-  #resourceBar span { background:linear-gradient(180deg,#222c,#111c); color:#fff; border:3px solid var(--gold); border-radius:10px; padding:6px 12px; font-size:13px; font-weight:600; box-shadow:0 3px 8px #0006; }
-  #battleStatus { position:absolute; top:50px; left:12px; color:#ff0; background:#0a0a0acc; padding:6px 10px; font-size:13px; display:none; z-index:15; border-radius:6px; border:2px solid var(--gold); }
-  #hud { position:absolute; top:12px; left:12px; color:#fff; background:linear-gradient(180deg,#222c,#111c); padding:10px 14px; font-size:14px; z-index:15; pointer-events:none; border:3px solid var(--gold); border-radius:12px; box-shadow:0 3px 10px #0007; }
-  #zoneFlash { position:absolute; top:40%; left:0; right:0; text-align:center; color:#fff; font-size:24px; font-weight:700; text-shadow:3px 3px #000; display:none; z-index:25; pointer-events:none; }
-  #accountBar { position:absolute; top:8px; right:8px; z-index:30; font-size:14px; }
-  #accountBar button { background:var(--gold); color:#000; border:none; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; }
+  #dpad { display:grid; grid-template-columns:64px 64px 64px; grid-template-rows:64px 64px 64px; gap:4px; }
+  #dpad button, #buttons button { width:70px; height:70px; font-size:22px; font-weight:800; background:linear-gradient(180deg,#3a3a3a,#1a1a1a); color:#eee; border:4px solid var(--gold); border-radius:20px; touch-action:manipulation; box-shadow:0 6px 14px #0008, inset 0 2px 0 #fff5; transition:all 0.12s ease; }
+  #dpad button:active, #buttons button:active { background:var(--gold); color:#000; transform:scale(0.90); box-shadow:0 2px 6px #0006; }
+  #buttons { display:flex; gap:16px; align-items:center; }
+  #buttons button.a { background:linear-gradient(180deg,#ff7777,#dd3333); border-color:#ffbbbb; }
+  #buttons button.b { background:linear-gradient(180deg,#77bbff,#2277dd); border-color:#bbddff; }
+  #buttons button.s { background:linear-gradient(180deg,#55ee88,#22aa55); border-color:#88ffbb; width:100px; font-size:15px; }
+  #dialog { position:absolute; bottom:120px; left:10px; right:10px; background:linear-gradient(180deg,#ffffff,#f0f0f0); color:#111; border:5px solid var(--gold); border-radius:18px; padding:18px 22px; font-size:17px; line-height:1.5; display:none; z-index:20; pointer-events:auto; box-shadow:0 10px 28px #000a, 0 0 0 2px #0003; }
+  #menu, #battleMenu { position:absolute; background:linear-gradient(180deg,#2a2a2a,#0a0a0a); color:#fff; border:4px solid var(--gold); border-radius:16px; padding:14px; display:none; z-index:20; pointer-events:auto; box-shadow:0 12px 32px #000c; }
+  #menu { top:60px; right:16px; min-width:210px; max-height:72vh; overflow-y:auto; }
+  #battleMenu { bottom:140px; right:16px; min-width:200px; }
+  #menu div, #battleMenu div { padding:16px 22px; font-size:18px; border-radius:12px; margin:4px 0; transition:all 0.15s; }
+  #menu div.sel, #battleMenu div.sel { background:var(--gold); color:#000; font-weight:800; box-shadow:0 0 12px #e8c547aa; }
+  #miniMap { position:absolute; top:60px; right:12px; border:3px solid var(--gold); border-radius:8px; background:#000; z-index:15; image-rendering:pixelated; box-shadow:0 4px 12px #0008; }
+  #questTracker { position:absolute; bottom:160px; left:12px; background:#0a0a0add; color:#fff; border:3px solid var(--gold); border-radius:10px; padding:8px 12px; font-size:13px; z-index:15; max-width:170px; box-shadow:0 4px 12px #0007; }
+  #questTracker .done { color:#6f6; }
+  #resourceBar { position:absolute; top:16px; right:100px; display:flex; gap:10px; z-index:15; }
+  #resourceBar span { background:linear-gradient(180deg,#2a2a2aee,#111111ee); color:#fff; border:3px solid var(--gold); border-radius:12px; padding:7px 12px; font-size:13px; font-weight:700; box-shadow:0 3px 8px #0006; }
+  #battleStatus { position:absolute; top:60px; left:12px; color:#ff0; background:#0a0a0add; padding:6px 10px; font-size:13px; display:none; z-index:15; border-radius:8px; border:2px solid #ff0; }
+  #hud { position:absolute; top:16px; left:12px; color:#fff; background:linear-gradient(180deg,#2a2a2aee,#111111ee); padding:10px 14px; font-size:14px; z-index:15; pointer-events:none; border:3px solid var(--gold); border-radius:14px; box-shadow:0 4px 12px #0007; font-weight:600; }
+  #zoneFlash { position:absolute; top:36%; left:0; right:0; text-align:center; color:#fff; font-size:26px; font-weight:800; text-shadow:0 0 12px #000, 3px 3px #000; display:none; z-index:25; pointer-events:none; letter-spacing:1px; }
+  #accountBar { position:absolute; top:10px; right:10px; z-index:30; font-size:14px; }
+  #accountBar button { background:var(--gold); color:#000; border:none; padding:8px 14px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 2px 6px #0006; transition:transform 0.1s; }
+  #accountBar button:active { transform:scale(0.95); }
   .kiosk #accountBar { display:none; }
   .kiosk body { cursor:none; }
 </style>
@@ -56,7 +57,7 @@
 <div id="ui">
   <div id="dpad">
     <div></div><button data-dir="up">▲</button><div></div>
-    <button data-dir="left">◀</button><div></div><button data-dir="right">▶</button>
+    <button data-dir="left">◄</button><div></div><button data-dir="right">►</button>
     <div></div><button data-dir="down">▼</button><div></div>
   </div>
   <div id="buttons">
