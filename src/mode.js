@@ -1,41 +1,35 @@
-// RIPZ Raiders — mode detection (kiosk vs public web)
-(function(){
-  'use strict';
+/* RIPZ Raiders — kiosk vs public web */
+(function () {
+  "use strict";
   var params = new URLSearchParams(location.search);
-  var isKiosk = params.get('mode') === 'kiosk' || location.pathname.indexOf('/kiosk') >= 0;
-  window.RIPZ_MODE = isKiosk ? 'kiosk' : 'web';
+  var path = location.pathname || "";
+  var isKiosk = params.get("mode") === "kiosk" || path.indexOf("/kiosk") >= 0;
+  window.RIPZ_MODE = isKiosk ? "kiosk" : "web";
   document.documentElement.classList.add(window.RIPZ_MODE);
 
-  // Kiosk: idle reset with longer timeout for better play
   if (isKiosk) {
-    var idleMs = 120000; // 2 minutes
+    var idleMs = 120000;
     var idleTimer = null;
-    function resetIdle(){
+    function resetIdle() {
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(function(){
+      idleTimer = setTimeout(function () {
         if (window.resetToTitle) window.resetToTitle();
         else location.reload();
       }, idleMs);
     }
-    ['touchstart','mousedown','keydown','pointerdown'].forEach(function(ev){
-      document.addEventListener(ev, resetIdle, {passive:true});
+    ["touchstart", "mousedown", "keydown", "pointerdown"].forEach(function (ev) {
+      document.addEventListener(ev, resetIdle, { passive: true });
     });
     resetIdle();
+    if (document.documentElement.requestFullscreen) {
+      document.addEventListener("pointerdown", function once() {
+        document.documentElement.requestFullscreen().catch(function () {});
+      }, { once: true });
+    }
   }
 
-  // Fullscreen for kiosk on first interaction
-  if (isKiosk && document.documentElement.requestFullscreen) {
-    var fsOnce = false;
-    document.addEventListener('click', function once(){
-      if (!fsOnce) {
-        document.documentElement.requestFullscreen().catch(function(){});
-        fsOnce = true;
-      }
-    }, {once:false});
-  }
-
-  // Web mode: optional welcome or other enhancements
-  if (!isKiosk) {
-    console.log('RIPZ Raiders web mode active');
-  }
+  window.resetToTitle = window.resetToTitle || function () {
+    if (window.RIPZ && window.RIPZ.toTitle) window.RIPZ.toTitle();
+    else location.reload();
+  };
 })();
