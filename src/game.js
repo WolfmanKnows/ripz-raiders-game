@@ -63,7 +63,7 @@
     c = $("c");
     if (!c) return;
     ctx = c.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
     try {
       var errs = (R.validateData ? R.validateData() : []).concat(R.validateMaps ? R.validateMaps() : []);
       if (errs.length) console.error("RIPZ validate", errs);
@@ -1549,7 +1549,7 @@
   function render() {
     if (!ctx) return;
     var w = c.width, h = c.height;
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
     ctx.save();
     if (R.G.shake > 0) ctx.translate((Math.random() - 0.5) * R.G.shake, (Math.random() - 0.5) * R.G.shake);
     ctx.fillStyle = "#07080c";
@@ -1631,16 +1631,16 @@
       ctx.fillStyle = i % 2 ? "#1a160e" : "#100e0c";
       ctx.fillRect(0, i * (h / 18), w, h / 18);
     }
-    var owl = R.art.mon("aureowl", Math.floor(R.G.time * 3) % 2);
-    ctx.drawImage(owl, w / 2 - 90, 36, 180, 180);
-    text("ohhRIPZ", w / 2 - 70, 250, 18, "#e8c547", true);
+    var owl = R.art.mon("aureowl", 0);
+    ctx.drawImage(owl, w / 2 - 84, 0, 168, 168);
     ctx.textAlign = "center";
-    text("RIPZ RAIDERS", w / 2, 300, 54, "#f4efe2", true);
-    text("TAKE YOUR SHOT!", w / 2, 342, 22, "#e8c547", true);
+    text("ohhRIPZ", w / 2, 196, 16, "#e8c547", true);
+    text("RIPZ RAIDERS", w / 2, 244, 46, "#f4efe2", true);
+    text("TAKE YOUR SHOT!", w / 2, 280, 18, "#e8c547", true);
     ctx.textAlign = "left";
     var items = ["NEW GAME", R.hasSave() ? "CONTINUE" : "CONTINUE — empty", R.G.mute ? "SOUND OFF" : "SOUND ON"];
     items.forEach(function (label, i) {
-      var y = 400 + i * 52;
+      var y = 348 + i * 48;
       if (R.G.titleI === i) {
         ctx.fillStyle = "#e8c547";
         round(w / 2 - 200, y - 32, 400, 44, 12);
@@ -1715,41 +1715,61 @@
     var x0 = Math.floor(camX), y0 = Math.floor(camY);
     var x1 = Math.ceil(camX + cols), y1 = Math.ceil(camY + rows);
     var frame = Math.floor(R.G.time * 4) % 4;
+    var tall = {};
+    [R.T.TREE, R.T.WALL, R.T.ROOF, R.T.FENCE, R.T.ROCK, R.T.SIGN, R.T.LAMP, R.T.BRAMBLE, R.T.DOOR, R.T.WINDOW, R.T.COUNTER].forEach(function (id) { tall[id] = 1; });
     for (var y = y0; y <= y1; y++) {
       for (var x = x0; x <= x1; x++) {
         if (x < 0 || y < 0 || x >= m.w || y >= m.h) continue;
         var id = tileAt(x, y);
+        if (tall[id]) continue;
         var img = R.art.tile(id, (x * 3 + y * 5) % 3, frame);
         ctx.drawImage(img, Math.round((x - camX) * TILE), Math.round((y - camY) * TILE), TILE, TILE);
       }
     }
     (m.items || []).forEach(function (it) {
       if (R.G.flags[it.flag]) return;
-      var sx = Math.round((it.x - camX) * TILE) + 16;
-      var sy = Math.round((it.y - camY) * TILE) + 16;
-      ctx.fillStyle = "#1a1a1e";
-      ctx.fillRect(sx, sy, 28, 28);
-      ctx.fillStyle = "#e8c547";
-      ctx.fillRect(sx + 4, sy + 4, 20, 20);
+      var sx = Math.round((it.x - camX) * TILE) + 14;
+      var sy = Math.round((it.y - camY) * TILE) + 12;
+      var ball = R.art.ball && R.art.ball();
+      if (ball) ctx.drawImage(ball, sx, sy, 36, 36);
+      else {
+        ctx.fillStyle = "#1a1a1e";
+        ctx.fillRect(sx, sy, 28, 28);
+        ctx.fillStyle = "#e8c547";
+        ctx.fillRect(sx + 4, sy + 4, 20, 20);
+      }
     });
     var ents = [];
     activeNpcs().forEach(function (n) {
       ents.push({ y: n.y, draw: function () {
-        var spr = R.art.trainer(n.kind || "owlie", n.dir || 0, Math.floor(R.G.time * 3) % 2);
-        var sx = Math.round((n.x - camX) * TILE) + (TILE - 48) / 2;
-        var sy = Math.round((n.y - camY) * TILE) - 16;
-        ctx.drawImage(spr, sx, sy, 48, 60);
+        var spr = R.art.trainer(n.kind || "owlie", n.dir || 0, Math.floor(R.G.time * 3) % 4);
+        var dw = 78, dh = 78;
+        var sx = Math.round((n.x - camX) * TILE) + (TILE - dw) / 2;
+        var sy = Math.round((n.y - camY) * TILE) + TILE - dh + 14;
+        ctx.drawImage(spr, sx, sy, dw, dh);
       } });
     });
     ents.push({ y: vis.y, draw: function () {
-      var fr = R.G.player.moving ? Math.floor(R.G.time * 8) % 2 : 0;
+      var fr = R.G.player.moving ? Math.floor(R.G.time * 8) % 4 : 0;
       var spr = R.art.trainer("owlie", R.G.player.dir, fr);
-      var sx = Math.round((vis.x - camX) * TILE) + (TILE - 52) / 2;
-      var sy = Math.round((vis.y - camY) * TILE) - 20;
-      ctx.drawImage(spr, sx, sy, 52, 66);
+      var dw = 84, dh = 84;
+      var sx = Math.round((vis.x - camX) * TILE) + (TILE - dw) / 2;
+      var sy = Math.round((vis.y - camY) * TILE) + TILE - dh + 16;
+      ctx.drawImage(spr, sx, sy, dw, dh);
     } });
     ents.sort(function (a, b) { return a.y - b.y; });
-    ents.forEach(function (e) { e.draw(); });
+    var ei = 0;
+    for (var ry = y0; ry <= y1; ry++) {
+      while (ei < ents.length && ents[ei].y < ry + 0.55) ents[ei++].draw();
+      for (var rx = x0; rx <= x1; rx++) {
+        if (rx < 0 || ry < 0 || rx >= m.w || ry >= m.h) continue;
+        var tid = tileAt(rx, ry);
+        if (!tall[tid]) continue;
+        var timg = R.art.tile(tid, (rx * 3 + ry * 5) % 3, frame);
+        ctx.drawImage(timg, Math.round((rx - camX) * TILE), Math.round((ry - camY) * TILE), TILE, TILE);
+      }
+    }
+    while (ei < ents.length) ents[ei++].draw();
     if (m.outdoor) {
       var hour = R.G.hour;
       var alpha = 0;
@@ -1813,37 +1833,40 @@
     var w = c.width, h = c.height;
     var b = R.G.battle;
     if (!b) return;
-    ctx.fillStyle = "#10141c";
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = b.weather === "rain" ? "#16324a" : "#1a2430";
-    ctx.beginPath();
-    ctx.ellipse(w * 0.72, h * 0.3, w * 0.18, 28, 0, 0, 7);
-    ctx.fill();
-    ctx.strokeStyle = "#e8c547";
-    ctx.stroke();
-    ctx.fillStyle = "#243028";
-    ctx.beginPath();
-    ctx.ellipse(w * 0.3, h * 0.58, w * 0.2, 32, 0, 0, 7);
-    ctx.fill();
-    ctx.stroke();
+    var bg = R.art.arena && R.art.arena();
+    if (bg) {
+      ctx.drawImage(bg, 0, 0, w, h);
+    } else {
+      ctx.fillStyle = "#10141c";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = b.weather === "rain" ? "#16324a" : "#1a2430";
+      ctx.beginPath();
+      ctx.ellipse(w * 0.72, h * 0.3, w * 0.18, 28, 0, 0, 7);
+      ctx.fill();
+      ctx.strokeStyle = "#e8c547";
+      ctx.stroke();
+      ctx.fillStyle = "#243028";
+      ctx.beginPath();
+      ctx.ellipse(w * 0.3, h * 0.58, w * 0.2, 32, 0, 0, 7);
+      ctx.fill();
+      ctx.stroke();
+    }
     var foe = curFoe();
     var mon = curMon();
     if (foe) {
       var fr = R.G.shake > 2 && b.flash === "p" ? 5 : Math.floor(R.G.time * 3) % 2;
       var img = R.art.mon(foe.sid, fr);
-      ctx.save();
-      ctx.translate(w * 0.72, h * 0.28);
-      ctx.scale(-1, 1);
-      ctx.drawImage(img, -80, -100, 160, 160);
-      ctx.restore();
-      if (foe.shiny) ring(w * 0.72, h * 0.22);
+      var fs = 200;
+      ctx.drawImage(img, w * 0.64 - fs / 2, h * 0.40 - fs * 0.35, fs, fs);
+      if (foe.shiny) ring(w * 0.58, h * 0.18);
     }
     if (mon) {
       var fr2 = R.G.shake > 2 && b.flash === "f" ? 5 : Math.floor(R.G.time * 3) % 2;
-      ctx.drawImage(R.art.mon(mon.sid, fr2), w * 0.3 - 90, h * 0.58 - 120, 170, 170);
-      if (mon.shiny) ring(w * 0.3, h * 0.48);
+      var ps = 230;
+      ctx.drawImage(R.art.mon(mon.sid, fr2), w * 0.28 - ps / 2, h * 0.60 - ps * 0.38, ps, ps);
+      if (mon.shiny) ring(w * 0.30, h * 0.48);
     }
-    if (b.fx && b.phase === "catch") drawBall(w * 0.72, h * 0.26, b.fx.t);
+    if (b.fx && b.phase === "catch") drawBall(w * 0.58, h * 0.28, b.fx.t);
     if (foe) infoBox(16, 16, foe, true);
     if (mon) infoBox(w - 300, h * 0.46, mon, false);
     if (!R.G.dialog && b.phase === "command") drawCommands();
@@ -1861,6 +1884,11 @@
   }
   function drawBall(x, y, t) {
     var hop = Math.abs(Math.sin(t * 10)) * 30;
+    var ball = R.art.ball && R.art.ball();
+    if (ball) {
+      ctx.drawImage(ball, x - 22, y - hop - 22, 44, 44);
+      return;
+    }
     ctx.fillStyle = "#1a1a1e";
     ctx.beginPath();
     ctx.arc(x, y - hop, 16, 0, 7);

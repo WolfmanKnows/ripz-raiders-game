@@ -357,29 +357,116 @@
     });
   }
 
+  var TILE_NAME = [
+    "grass", "tall", "path", "tree", "water", "wall", "roof", "door", "floor", "counter",
+    "rug", "flower", "sand", "bridge", "bramble", "rock", "fence", "pc", "bed", "book",
+    "machine", "window", "mat", "lamp", "foil", "sign",
+  ];
+  var MON_IDS = [
+    "hootling", "chromehoot", "aureowl", "nestling", "packbloom", "canopyrex",
+    "ripkit", "ripper", "infernowl", "foilghost", "spectowl", "packrat", "hoardbeast",
+    "tideling", "brineback", "sparkmite", "voltowl", "shelflick", "shelfbreaker",
+    "clearout", "bulkbuyer", "resale", "scalplet",
+  ];
+  var MON_GRID = { hootling: [2, 2], nestling: [2, 2], ripkit: [2, 2], chromehoot: [2, 2] };
+  var TRAINERS = ["owlie", "rival", "prof", "nurse", "leader"];
+  var TRAINER_ALIAS = { kid: "owlie", clerk: "owlie", gate: "rival", mom: "nurse" };
+  var gen = { tiles: {}, mons: {}, trainers: {}, ball: null, arena: null };
+  var sliceCache = {};
+
+  function assetRoot() {
+    var path = (typeof location !== "undefined" && location.pathname) || "";
+    var m = path.match(/^\/hds-[a-z0-9]+-\d+-[a-z0-9]+/i);
+    var pre = m ? m[0] : "";
+    if (window.__RIPZ_REACT) return pre + "/ripz/assets/";
+    return "assets/";
+  }
+
+  function loadImg(url) {
+    var img = new Image();
+    img.src = url;
+    return img;
+  }
+
+  function ready(img) {
+    return !!(img && img.complete && img.naturalWidth);
+  }
+
+  function sliceOf(img, cols, rows, col, row, nudge) {
+    var sw = img.width / cols;
+    var sh = img.height / rows;
+    var cnv = document.createElement("canvas");
+    cnv.width = Math.max(1, Math.round(sw));
+    cnv.height = Math.max(1, Math.round(sh));
+    var g = cnv.getContext("2d");
+    g.imageSmoothingEnabled = true;
+    var dx = nudge ? sw * 0.05 : 0;
+    g.drawImage(img, Math.round(col * sw), Math.round(row * sh), Math.round(sw), Math.round(sh), dx, 0, sw - dx, sh);
+    return cnv;
+  }
+
+  function paintFallbackTile(id, variant, frame) {
+    var k = "p:" + id + ":" + (variant % 4) + ":" + (frame % 4);
+    if (!tileCache[k]) tileCache[k] = paintTile(id, variant % 4, frame % 4);
+    return tileCache[k];
+  }
+
   R.art = {
     tile: function (id, variant, frame) {
-      var k = id + ":" + (variant % 4) + ":" + (frame % 4);
-      if (!tileCache[k]) tileCache[k] = paintTile(id, variant % 4, frame % 4);
-      return tileCache[k];
+      var name = TILE_NAME[id] || "grass";
+      if (name === "water") name = "water" + ((frame || 0) % 4);
+      var img = gen.tiles[name];
+      if (ready(img)) return img;
+      return paintFallbackTile(id, variant, frame);
     },
     mon: function (sid, frame) {
-      var k = sid + ":" + frame;
-      if (!monCache[k]) monCache[k] = paintMon(STYLES[sid] || STYLES.hootling, frame);
-      return monCache[k];
+      var img = gen.mons[sid];
+      if (!ready(img)) {
+        var k = sid + ":" + frame;
+        if (!monCache[k]) monCache[k] = paintMon(STYLES[sid] || STYLES.hootling, frame);
+        return monCache[k];
+      }
+      var grid = MON_GRID[sid] || [1, 1];
+      var col = 0;
+      var row = 0;
+      var nudge = false;
+      if (grid[0] === 2) {
+        if (frame === 1) col = 1;
+        else if (frame === 5) { col = 1; row = 1; }
+        else if (frame === 2 || frame === 3 || frame === 4) row = 1;
+      } else if (frame === 5) nudge = true;
+      var key = "m:" + sid + ":" + frame;
+      if (!sliceCache[key]) sliceCache[key] = sliceOf(img, grid[0], grid[1], col, row, nudge);
+      return sliceCache[key];
     },
     trainer: function (kind, dir, frame) {
-      var k = kind + ":" + dir + ":" + (frame % 2);
-      if (!trainerCache[k]) trainerCache[k] = paintTrainer(kind, dir, frame % 2);
-      return trainerCache[k];
+      var name = TRAINER_ALIAS[kind] || kind || "owlie";
+      if (TRAINERS.indexOf(name) < 0) name = "owlie";
+      var img = gen.trainers[name];
+      if (!ready(img)) {
+        var k = kind + ":" + dir + ":" + (frame % 2);
+        if (!trainerCache[k]) trainerCache[k] = paintTrainer(kind, dir, frame % 2);
+        return trainerCache[k];
+      }
+      var row = dir === 1 ? 3 : dir === 2 ? 1 : dir === 3 ? 2 : 0;
+      var col = (frame || 0) % 4;
+      var key = "t:" + name + ":" + row + ":" + col;
+      if (!sliceCache[key]) sliceCache[key] = sliceOf(img, 4, 4, col, row, false);
+      return sliceCache[key];
     },
+    ball: function () { return ready(gen.ball) ? gen.ball : null; },
+    arena: function () { return ready(gen.arena) ? gen.arena : null; },
     build: function () {
-      var ids = [];
-      Object.keys(R.T).forEach(function (n) { ids.push(R.T[n]); });
-      ids.forEach(function (id) {
-        for (var v = 0; v < 3; v++) R.art.tile(id, v, 0);
+      var root = assetRoot();
+      TILE_NAME.forEach(function (n) {
+        if (n === "water") {
+          for (var i = 0; i < 4; i++) gen.tiles["water" + i] = loadImg(root + "tiles/water" + i + ".png");
+        } else gen.tiles[n] = loadImg(root + "tiles/" + n + ".png");
       });
-      [0, 1, 2, 5].forEach(function (f) { R.art.mon("hootling", f); });
+      MON_IDS.forEach(function (id) { gen.mons[id] = loadImg(root + "sheets/" + id + ".png"); });
+      TRAINERS.forEach(function (id) { gen.trainers[id] = loadImg(root + "sheets/" + id + ".png"); });
+      gen.ball = loadImg(root + "sheets/ripball.png");
+      gen.arena = loadImg(root + "ui/arena.jpg");
     },
   };
 })();
