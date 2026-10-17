@@ -292,7 +292,7 @@ function save(slot){ slot=slot||1; try{ localStorage.setItem('ripz_save_'+slot, 
     }catch(e){}
   }
 
-  var fadeAlpha = 0;
+  var fadeAlpha = 0, windup = 0, attackOffset = 0, ballAnim = null;
   function flashZone(name){
     fadeAlpha = 1; flash=8;
     var el = document.getElementById('zoneFlash');
