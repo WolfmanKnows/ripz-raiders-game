@@ -111,7 +111,7 @@ if(dayPhase && ZONE_WILDS[zone+'_night']) pool = ZONE_WILDS[zone+'_night'];
   var MART = [{name:'Berry',cost:1,type:'berry'},{name:'Pack',cost:2,type:'pack'},{name:'Focus',cost:10,type:'focus'}];
 var berries = 5, etbs = 0, packs = 1, flags = {}, badges = 0, score = 0, mute = false;
   var dialog = null, dialogIdx = 0, menuOpen = false, menuSel = 0;
-  var loading = true, loadProgress = 0, introPlaying = false, introFrame = 0, titleScreen = true, partyScreen = false, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
+  var invScreen = false, loading = true, loadProgress = 0, introPlaying = false, introFrame = 0, titleScreen = true, partyScreen = false, inBattle = false, wild = null, trainerTeam = null, trainerIdx = 0, battleSel = 0, active = 0, battleLog = [], moveSel = 0, pickingMove = false, burnTurns = 0, sleepTurns = 0;
   var keys = {}, touchDir = null, grassTicks = 0, shake = 0, fade = 0, zoneTimer = 0, animFrame = 0, flash = 0, floatText = null;
   var catchStreak = 0, wins = 0, notes = 0, steps = 0, playTime = 0, shinyOdds = 0.04, dayPhase = 0, tokens = 0, achievements = [], seen = {}, volume = 1, textSpeed = 1, weather = 0;
 
@@ -316,7 +316,7 @@ function save(slot){ slot=slot||1; try{ localStorage.setItem('ripz_save_'+slot, 
   function openMenu(){
     menuOpen=true; menuSel=0;
     var menu = document.getElementById('menu');
-    var labels = ['Resume','Party','Summary','Dex','Save','Settings','Quests','PC Box','Fast Travel','Reset','Close'];
+    var labels = ['Resume','Party','Inventory','Summary','Dex','Save','Settings','Quests','PC Box','Fast Travel','Reset','Close'];
     menu.innerHTML = labels.map(function(l){ return '<div>'+l+'</div>'; }).join('');
     menu.style.display='block';
     updateMenu();
@@ -332,7 +332,7 @@ function save(slot){ slot=slot||1; try{ localStorage.setItem('ripz_save_'+slot, 
     for(var i=0;i<items.length;i++) items[i].className = i===menuSel ? 'sel' : '';
   }
   function menuAction(){
-    var acts=['resume','party','summary','dex','save','settings','quests','pc','travel','reset','close'];
+    var acts=['resume','party','inventory','summary','dex','save','settings','quests','pc','travel','reset','close'];
     var a=acts[menuSel];
     if(a==='party'){
       var lines=party.map(function(p,i){ return (i===active?'> ':'')+p.name+' Lv'+p.lvl+' HP '+p.hp+'/'+p.max+' XP'+p.xp; });
@@ -779,10 +779,26 @@ function drawTitle(){
     ctx.fillText('B: Back', 8, h-8);
   }
 
+
+  function drawInv(){
+    var w=canvas.width, h=canvas.height;
+    ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#e8c547'; ctx.font='12px sans-serif';
+    ctx.fillText('INVENTORY', 16, 24);
+    ctx.fillStyle='#fff'; ctx.font='10px sans-serif';
+    ctx.fillText('Berries: '+berries, 16, 50);
+    ctx.fillText('Packs: '+packs, 16, 66);
+    ctx.fillText('Tokens: '+tokens, 16, 82);
+    ctx.fillText('ETBs: '+etbs, 16, 98);
+    ctx.fillStyle='#aaa'; ctx.font='8px sans-serif';
+    ctx.fillText('A: Use Berry  B: Back', 16, h-20);
+  }
+
 function draw(){
     if(loading){ drawLoading(); loadProgress=Math.min(100,loadProgress+2); if(loadProgress>=100){ loading=false; introPlaying=true; } return; }
 if(introPlaying){ drawIntro(); return; }
 if(titleScreen){ drawTitle(); return; }
+if(invScreen){ drawInv(); return; }
 if(partyScreen){ drawParty(); return; }
     var w=canvas.width, h=canvas.height;
     drawBg(w,h);
@@ -891,6 +907,8 @@ if(inBattle && wild){ bs.style.display='block'; bs.textContent = wild.name+' '+w
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); interact(); }
     if(introPlaying && (e.key==='a'||e.key==='A'||e.key==='Enter')){ introPlaying=false; titleScreen=true; return; }
 if(titleScreen){ if(e.key==='a'||e.key==='A'||e.key==='Enter'){ titleScreen=false; startDialog(['Welcome, Owlie.','Walk into tall grass to find creatures.','A confirms, B cancels.']); } else if(e.key==='b'||e.key==='B'){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); } return; }
+if(invScreen && (e.key==='a'||e.key==='A')){ if(berries>0 && party[active].hp<party[active].max){ berries--; party[active].hp=Math.min(party[active].max,party[active].hp+15); } return; }
+if(invScreen && (e.key==='b'||e.key==='B'||e.key==='Escape')){ invScreen=false; return; }
 if(partyScreen && (e.key==='b'||e.key==='B'||e.key==='Escape')){ partyScreen=false; return; }
 if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) openMenu(); }
     if(e.key==='n'){ mute=!mute; startDialog([mute?'Muted.':'Sound on.']); }
@@ -932,6 +950,7 @@ if(e.key==='Escape'||e.key==='m'){ if(menuOpen) closeMenu(); else if(!inBattle) 
   document.getElementById('btnA').addEventListener('click', interact);
   document.getElementById('btnA').addEventListener('touchstart', function(e){ e.preventDefault(); interact(); }, {passive:false});
   document.getElementById('btnB').addEventListener('click', function(){
+if(invScreen){ invScreen=false; return; }
 if(partyScreen){ partyScreen=false; return; }
 if(titleScreen){ titleScreen=false; var s=localStorage.getItem('ripz_save'); if(s) loadSave(JSON.parse(s)); return; }
     if(dialog) advanceDialog();
